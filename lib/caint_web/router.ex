@@ -16,18 +16,11 @@ defmodule CaintWeb.Router do
 
   scope "/", CaintWeb do
     pipe_through :browser
-
-    get "/", PageController, :home
+    live "/", CaintLive, :index
+    live "/:locale", CaintLive, :locale
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", CaintWeb do
-  #   pipe_through :api
-  # end
-
-  # Enable Swoosh mailbox preview in development
   if Application.compile_env(:caint, :dev_routes) do
-
     scope "/dev" do
       pipe_through :browser
 

@@ -55,6 +55,7 @@ defmodule CaintWeb do
       use Phoenix.LiveView,
         layout: {CaintWeb.Layouts, :app}
 
+      alias Phoenix.LiveView
       unquote(html_helpers())
     end
   end
