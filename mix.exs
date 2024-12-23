@@ -32,6 +32,7 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
       {:req, "~> 0.5.8"},
       {:decimal, "~> 2.3"},
       {:phoenix, "~> 1.7.18"},
@@ -42,12 +43,7 @@ defmodule Caint.MixProject do
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:heroicons,
-       github: "tailwindlabs/heroicons",
-       tag: "v2.1.1",
-       sparse: "optimized",
-       app: false,
-       compile: false,
-       depth: 1},
+       github: "tailwindlabs/heroicons", tag: "v2.1.1", sparse: "optimized", app: false, compile: false, depth: 1},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.26"},

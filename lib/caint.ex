@@ -44,8 +44,7 @@ defmodule Caint do
     completion_details =
       gettext_dir
       |> po_paths_in_priv(locale)
-      |> Enum.reduce(%{total_messages_count: 0, total_untranslated_count: 0}, fn po_path,
-                                                                                 completion_details ->
+      |> Enum.reduce(%{total_messages_count: 0, total_untranslated_count: 0}, fn po_path, completion_details ->
         messages = Expo.PO.parse_file!(po_path)
         total_messages_in_po_file = Enum.count(messages.messages)
         total_untranslated_in_po_file = Enum.count(messages.messages, &(!message_translated?(&1)))

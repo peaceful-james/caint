@@ -164,7 +164,7 @@ defmodule CaintWeb.CaintLive do
     %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
 
     completion_percentages =
-      if !!gettext_dir do
+      if gettext_dir do
         Enum.reduce(locales, %{}, fn locale, completion_percentages ->
           percentage = Caint.completion_percentage(gettext_dir, locale)
           Map.put(completion_percentages, locale, percentage)

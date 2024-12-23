@@ -24,9 +24,9 @@ defmodule CaintWeb do
       use Phoenix.Router, helpers: false
 
       # Import common connection and controller functions to use in pipelines
-      import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+      import Plug.Conn
     end
   end
 
@@ -56,6 +56,7 @@ defmodule CaintWeb do
         layout: {CaintWeb.Layouts, :app}
 
       alias Phoenix.LiveView
+
       unquote(html_helpers())
     end
   end
@@ -86,10 +87,11 @@ defmodule CaintWeb do
       # Translation
       use Gettext, backend: CaintWeb.Gettext
 
+      import CaintWeb.CoreComponents
+
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import CaintWeb.CoreComponents
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
