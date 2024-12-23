@@ -226,6 +226,6 @@ defmodule CaintWeb.CaintLive do
     |> Deepl.translate_all_untranslated()
     |> IO.inspect()
 
-    put_flash(socket, :info, "need to implement this")
+    put_flash(socket, :error, "need to implement this")
   end
 end
