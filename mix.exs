@@ -32,6 +32,7 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:req, "~> 0.5.8"},
       {:decimal, "~> 2.3"},
       {:phoenix, "~> 1.7.18"},
       {:phoenix_html, "~> 4.1"},
@@ -47,8 +48,6 @@ defmodule Caint.MixProject do
        app: false,
        compile: false,
        depth: 1},
-      {:swoosh, "~> 1.5"},
-      {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.26"},

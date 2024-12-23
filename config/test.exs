@@ -7,12 +7,6 @@ config :caint, CaintWeb.Endpoint,
   secret_key_base: "LixyjLbFax9qkA3t37RV9MUWZHSZzYwVvcOaKpwvv/t97szo0Dm9gclzyit+sglk",
   server: false
 
-# In test we don't send emails
-config :caint, Caint.Mailer, adapter: Swoosh.Adapters.Test
-
-# Disable swoosh api client as it is only required for production adapters
-config :swoosh, :api_client, false
-
 # Print only warnings and errors during test
 config :logger, level: :warning
 

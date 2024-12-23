@@ -160,7 +160,6 @@ defmodule CaintWeb.CaintLive do
     |> then(&{:noreply, &1})
   end
 
-
   defp calculate_all_completion_percentages(socket) do
     %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
 
@@ -215,8 +214,13 @@ defmodule CaintWeb.CaintLive do
   end
 
   defp translate(socket, params) do
-    %{"text" => _text, "source_locale" => _source_locale, "target_locale" => _target_locale, "context" => _context} = params
+    %{
+      "text" => _text,
+      "source_locale" => _source_locale,
+      "target_locale" => _target_locale,
+      "context" => _context
+    } = params
 
     put_flash(socket, :info, "need to implement this")
-    end
+  end
 end

@@ -11,11 +11,6 @@ defmodule Caint.Application do
       CaintWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:caint, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Caint.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: Caint.Finch},
-      # Start a worker by calling: Caint.Worker.start_link(arg)
-      # {Caint.Worker, arg},
-      # Start to serve requests, typically the last entry
       CaintWeb.Endpoint
     ]
 

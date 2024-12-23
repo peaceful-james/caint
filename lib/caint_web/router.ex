@@ -19,12 +19,4 @@ defmodule CaintWeb.Router do
     live "/", CaintLive, :index
     live "/:locale", CaintLive, :locale
   end
-
-  if Application.compile_env(:caint, :dev_routes) do
-    scope "/dev" do
-      pipe_through :browser
-
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-  end
 end
