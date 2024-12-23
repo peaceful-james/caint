@@ -23,13 +23,13 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def render(%{live_action: :index} = assigns) do
     ~H"""
-    <div id="caint-live" class={["px-4 py-2 sm:px-6 lg:px-8", "space-y-4"]}>
+    <div id="caint-index-page">
       <.simple_form :let={f} for={@gettext_dir_form} phx-change="change-gettext-dir">
         <.input field={f[:gettext_dir]} label="Gettext directory" phx-debounce={500} />
       </.simple_form>
       <.table :if={Enum.any?(@locales)} id="caint-index-table" rows={@locales}>
         <:col :let={locale} label="locale">
-          <.link href={~p"/#{locale}"}>
+          <.link patch={~p"/#{locale}"}>
             {locale}
           </.link>
         </:col>
@@ -44,8 +44,8 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def render(%{live_action: :locale} = assigns) do
     ~H"""
-    <div id="caint-live" class={["px-4 py-2 sm:px-6 lg:px-8", "space-y-4"]}>
-      <.back navigate={~p"/"}>
+    <div id="caint-locale-page">
+      <.back patch={~p"/"}>
         Back
       </.back>
       <h1>Locale: {@locale}</h1>

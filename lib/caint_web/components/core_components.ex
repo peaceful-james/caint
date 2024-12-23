@@ -553,7 +553,8 @@ defmodule CaintWeb.CoreComponents do
 
       <.back navigate={~p"/posts"}>Back to posts</.back>
   """
-  attr :navigate, :any, required: true
+  attr :navigate, :any, default: nil
+  attr :patch, :any, default: nil
   slot :inner_block, required: true
 
   def back(assigns) do
@@ -561,6 +562,7 @@ defmodule CaintWeb.CoreComponents do
     <div class="mt-16">
       <.link
         navigate={@navigate}
+        patch={@patch}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
