@@ -20,17 +20,18 @@ defmodule Caint.Deepl do
   def translate(data) do
     @domain
     |> Path.join("translate")
-    |> Req.post(auth: IO.inspect(auth_header(), label: "AUTH HEAD"), json: data)
+    |> Req.post(auth: auth_header(), json: data)
   end
 
   def translate_all_untranslated(translations) do
-    translations
-    |> Enum.reject(&Caint.message_translated?(&1.message))
+    {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
+
+    untranslated
     |> Enum.group_by(& &1.message.msgctxt)
     |> Enum.flat_map(fn {_context, same_context_translations} ->
       same_context_translations
       |> Enum.chunk_every(@batch_size)
-      |> Enum.map(fn list_of_same_context_translations ->
+      |> Enum.flat_map(fn list_of_same_context_translations ->
         {:ok, %{body: %{"translations" => deepl_results}}} =
           list_of_same_context_translations
           |> to_translate_data()
@@ -45,6 +46,7 @@ defmodule Caint.Deepl do
         end)
       end)
     end)
+    |> Kernel.++(done)
   end
 
   defp to_translate_data(list_of_same_context_translations) do

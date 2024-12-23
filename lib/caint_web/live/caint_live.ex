@@ -222,10 +222,10 @@ defmodule CaintWeb.CaintLive do
     %{"locale" => locale} = params
     %{locale: ^locale, translations: translations} = socket.assigns
 
-    translations
-    |> Deepl.translate_all_untranslated()
-    |> IO.inspect()
+    new_translations = Deepl.translate_all_untranslated(translations)
 
-    put_flash(socket, :error, "need to implement this")
+    socket
+    |> assign(:translations, new_translations)
+    |> put_flash(:info, "Done translating :)")
   end
 end

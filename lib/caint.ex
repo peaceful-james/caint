@@ -85,4 +85,9 @@ defmodule Caint do
   def infer_domain_from_po_path(po_path) do
     Path.basename(po_path, ".po")
   end
+
+  def write_le_po_file(po_path, messages) do
+    iodata = Expo.PO.compose(messages)
+    File.write!(po_path, iodata)
+  end
 end
