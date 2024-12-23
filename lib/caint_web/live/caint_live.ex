@@ -49,12 +49,12 @@ defmodule CaintWeb.CaintLive do
         Back
       </.back>
       <h1>Locale: {@locale}</h1>
-      <.table id="users" rows={@translations}>
+      <.table id="users" rows={Enum.sort_by(@translations, &Caint.message_translated?(&1.message))}>
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
         </:col>
         <:col :let={translation} label="msgstr">
-          {inspect(translation.message.msgstr)}
+          <.msgstr translation={translation} />
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -98,6 +98,30 @@ defmodule CaintWeb.CaintLive do
     ~H"""
     <p>
       {@msgid_str}
+    </p>
+    """
+  end
+
+  attr :translation, :map, required: true
+
+  defp msgstr(assigns) do
+    %{translation: translation} = assigns
+
+    msgstr_strs =
+      case translation.message.msgstr do
+        [""] -> [:missing]
+        [msgstr_str] -> [msgstr_str]
+        msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
+      end
+
+    assigns = %{msgstr_strs: msgstr_strs}
+
+    ~H"""
+    <p
+      :for={msgstr_str <- @msgstr_strs}
+      class={[if(msgstr_str == :missing, do: "uppercase text-red-500")]}
+    >
+      {msgstr_str}
     </p>
     """
   end
