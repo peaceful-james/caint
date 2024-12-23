@@ -2,6 +2,8 @@ defmodule CaintWeb.CaintLive do
   @moduledoc false
   use CaintWeb, :live_view
 
+  alias Caint.Deepl
+
   @initial_gettext_dir "../momo/priv/gettext"
   @impl LiveView
   def mount(_params, _session, socket) do
@@ -49,6 +51,9 @@ defmodule CaintWeb.CaintLive do
         Back
       </.back>
       <h1>Locale: {@locale}</h1>
+      <.button type="button" phx-click="translate-all-untranslated" phx-value-locale={@locale}>
+        Translate all "Missing"
+      </.button>
       <.table id="users" rows={Enum.sort_by(@translations, &Caint.message_translated?(&1.message))}>
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
@@ -154,9 +159,9 @@ defmodule CaintWeb.CaintLive do
   end
 
   @impl LiveView
-  def handle_event("translate", params, socket) do
+  def handle_event("translate-all-untranslated", params, socket) do
     socket
-    |> translate(params)
+    |> translate_all_untranslated(params)
     |> then(&{:noreply, &1})
   end
 
@@ -213,13 +218,13 @@ defmodule CaintWeb.CaintLive do
     end
   end
 
-  defp translate(socket, params) do
-    %{
-      "text" => _text,
-      "source_locale" => _source_locale,
-      "target_locale" => _target_locale,
-      "context" => _context
-    } = params
+  defp translate_all_untranslated(socket, params) do
+    %{"locale" => locale} = params
+    %{locale: ^locale, translations: translations} = socket.assigns
+
+    translations
+    |> Deepl.translate_all_untranslated()
+    |> IO.inspect()
 
     put_flash(socket, :info, "need to implement this")
   end
