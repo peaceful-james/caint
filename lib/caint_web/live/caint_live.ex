@@ -4,7 +4,8 @@ defmodule CaintWeb.CaintLive do
 
   alias Caint.Deepl
 
-  @initial_gettext_dir "../my_app/priv/gettext"
+  @initial_gettext_dir "../momo/priv/gettext"
+
   @impl LiveView
   def mount(_params, _session, socket) do
     socket
