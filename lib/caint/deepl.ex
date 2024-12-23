@@ -57,7 +57,7 @@ defmodule Caint.Deepl do
         Enum.join(translation.message.msgid, "\n")
       end)
 
-    context = Enum.join(message.msgctxt, "\n")
+    context = Enum.join(message.msgctxt || [], "\n")
 
     %{
       text: text,
