@@ -23,12 +23,25 @@ defmodule CaintWeb.CaintLive do
   end
 
   @impl LiveView
-  def render(%{live_action: :index} = assigns) do
+  def render(assigns) do
     ~H"""
     <div id="caint-index-page">
       <.simple_form :let={f} for={@gettext_dir_form} phx-change="change-gettext-dir">
         <.input field={f[:gettext_dir]} label="Gettext directory" phx-debounce={500} />
       </.simple_form>
+      <.index_page
+        :if={@live_action == :index}
+        locales={@locales}
+        completion_percentages={@completion_percentages}
+      />
+      <.locale_page :if={@live_action == :locale} locale={@locale} translations={@translations} />
+    </div>
+    """
+  end
+
+  def index_page(assigns) do
+    ~H"""
+    <div id="caint-index-page">
       <.table :if={Enum.any?(@locales)} id="caint-index-table" rows={@locales}>
         <:col :let={locale} label="Gettext locale">
           <.link patch={~p"/#{locale}"}>
@@ -43,8 +56,7 @@ defmodule CaintWeb.CaintLive do
     """
   end
 
-  @impl LiveView
-  def render(%{live_action: :locale} = assigns) do
+  defp locale_page(assigns) do
     ~H"""
     <div id="caint-locale-page">
       <.back patch={~p"/"}>
@@ -220,9 +232,24 @@ defmodule CaintWeb.CaintLive do
 
   defp translate_all_untranslated(socket, params) do
     %{"locale" => locale} = params
-    %{locale: ^locale, translations: translations} = socket.assigns
+    %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
 
     new_translations = Deepl.translate_all_untranslated(translations)
+
+    new_translations
+    |> Enum.group_by(& &1.domain)
+    |> Enum.map(fn {domain, same_domain_translations} ->
+      po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", domain <> ".po"])
+
+      unless File.exists?(po_path) do
+        raise "NO SUCH PATH #{po_path}"
+      end
+
+      original = Expo.PO.parse_file!(po_path)
+      messages = Enum.map(same_domain_translations, & &1.message)
+      new = %{original | messages: messages}
+      Caint.write_le_po_file(po_path, new)
+    end)
 
     socket
     |> assign(:translations, new_translations)
