@@ -1,11 +1,27 @@
 import Config
 
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
 # and secrets from environment variables or elsewhere. Do not define
 # any compile-time configuration in here, as it won't be applied.
-# The block below contains prod specific runtime configuration.
+# The block at the end of the file contains prod specific runtime configuration.
+
+# Gets an environment variable's value, or the given default value.
+# If in prod env, the given default value is ignored.
+# If there is no value, in prod env, an error is raised
+# This prevents starting the app in production with missing config
+get_env_var_value = fn
+  env_var_name ->
+    value = System.get_env(env_var_name)
+
+    if is_nil(value),
+      do: raise("environment variable #{env_var_name} is missing."),
+      else: value
+end
+
+if config_env() in [:dev, :test], do: Code.eval_file("./dev-secrets/.env.exs")
 
 # ## Using releases
 #
@@ -19,6 +35,9 @@ import Config
 if System.get_env("PHX_SERVER") do
   config :caint, CaintWeb.Endpoint, server: true
 end
+
+
+config :deepl_ex, api_key: get_env_var_value.("DEEPL_API_KEY")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
