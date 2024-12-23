@@ -12,10 +12,7 @@ defmodule Caint do
   def gettext_locales(gettext_dir) do
     gettext_dir
     |> po_paths_in_priv()
-    |> Enum.flat_map(fn po_path ->
-      messages = Expo.PO.parse_file!(po_path)
-      infer_gettext_locale_from_messages(messages)
-    end)
+    |> Enum.map(&infer_gettext_locale_from_po_path/1)
     |> Enum.uniq()
   end
 
@@ -37,17 +34,6 @@ defmodule Caint do
         %{message: message, domain: domain, locale: locale}
       end)
     end)
-  end
-
-  def parse_po_paths(po_paths) do
-    Enum.map(po_paths, &parse_po_path/1)
-  end
-
-  def parse_po_path(po_path) do
-    domain = infer_domain_from_po_path(po_path)
-    messages = Expo.PO.parse_file!(po_path)
-    locale = infer_gettext_locale_from_messages(messages)
-    %{locale: locale, domain: domain}
   end
 
   def message_translated?(message) do
@@ -88,8 +74,13 @@ defmodule Caint do
     end
   end
 
-  def infer_gettext_locale_from_messages(messages) do
+  def infer_language_from_messages(messages) do
     Expo.Messages.get_header(messages, "language")
+  end
+
+  def infer_gettext_locale_from_po_path(po_path) do
+    [_file, "LC_MESSAGES", locale | _rest] = po_path |> Path.split() |> Enum.reverse()
+    locale
   end
 
   def infer_domain_from_po_path(po_path) do

@@ -28,12 +28,12 @@ defmodule CaintWeb.CaintLive do
         <.input field={f[:gettext_dir]} label="Gettext directory" phx-debounce={500} />
       </.simple_form>
       <.table :if={Enum.any?(@locales)} id="caint-index-table" rows={@locales}>
-        <:col :let={locale} label="locale">
+        <:col :let={locale} label="Gettext locale">
           <.link patch={~p"/#{locale}"}>
             {locale}
           </.link>
         </:col>
-        <:col :let={locale} label="calc %">
+        <:col :let={locale} label="Completion %">
           <.completion locale={locale} percentage={@completion_percentages[locale]} />
         </:col>
       </.table>
@@ -72,12 +72,14 @@ defmodule CaintWeb.CaintLive do
 
   defp completion(assigns) do
     ~H"""
-    <.button phx-click="calc-percent" phx-value-locale={@locale}>
-      Calc %
-    </.button>
-    <p :if={@percentage}>
-      {@percentage |> to_string() |> Kernel.<>("%")}
-    </p>
+    <div class="flex justify-between items-center gap-x-2">
+      <p :if={@percentage}>
+        {@percentage |> to_string() |> Kernel.<>("%")}
+      </p>
+      <.button phx-click="calc-percent" phx-value-locale={@locale}>
+        Recalculate
+      </.button>
+    </div>
     """
   end
 
@@ -122,8 +124,23 @@ defmodule CaintWeb.CaintLive do
     |> then(&{:noreply, &1})
   end
 
+  defp calculate_all_completion_percentages(socket) do
+    %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
+
+    completion_percentages =
+      if !!gettext_dir do
+        Enum.reduce(locales, %{}, fn locale, completion_percentages ->
+          percentage = Caint.completion_percentage(gettext_dir, locale)
+          Map.put(completion_percentages, locale, percentage)
+        end)
+      else
+        %{}
+      end
+
+    assign(socket, :completion_percentages, completion_percentages)
+  end
+
   defp init_locales(socket) do
-    IO.puts("INIT LOCALES")
     %{gettext_dir: gettext_dir} = socket.assigns
     locales = if gettext_dir, do: Caint.gettext_locales(gettext_dir), else: []
 
@@ -138,6 +155,7 @@ defmodule CaintWeb.CaintLive do
     |> assign(:gettext_dir, gettext_dir)
     |> assign(:gettext_dir_form, to_form(%{"gettext_dir" => gettext_dir}))
     |> init_locales()
+    |> calculate_all_completion_percentages()
   end
 
   defp assign_translations(socket) do
