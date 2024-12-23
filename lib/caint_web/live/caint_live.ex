@@ -73,7 +73,12 @@ defmodule CaintWeb.CaintLive do
   defp completion(assigns) do
     ~H"""
     <div class="flex justify-between items-center gap-x-2">
-      <p :if={@percentage}>
+      <p
+        :if={@percentage}
+        class={[
+          if(Decimal.eq?(@percentage, 100), do: "text-green-500", else: "text-red-500")
+        ]}
+      >
         {@percentage |> to_string() |> Kernel.<>("%")}
       </p>
       <.button phx-click="calc-percent" phx-value-locale={@locale}>
