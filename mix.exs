@@ -32,6 +32,7 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:decimal, "~> 2.3"},
       {:phoenix, "~> 1.7.18"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
