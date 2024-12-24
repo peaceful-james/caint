@@ -9,6 +9,13 @@ https://github.com/elixir-gettext/gettext/pull/305
 
 So I made "Caint", just to keep the show on the road.
 
+## Features
+
+- Bulk-translate locale-scoped PO files in a single step
+- See how "complete" a particular locale is.
+- Easily find missing translations (they are at the top of a locale's page).
+- Absolutely nothing else.
+
 ### What people are saying about `caint`: 
 
 > "Untested, inefficient and hacky."
