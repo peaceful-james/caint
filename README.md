@@ -1,10 +1,21 @@
 # Caint
 
-Untested, inefficient, hacky translating of PO files for Elixir projects.
+## DeepL auto-translating of PO files
 
 Inspired a lot by (but not as good as) `kanta`.
 
-I used to use Kanta a lot but it relies on an outdated `gettext` PR that was recently rejected (years after being approved).
+I used to use Kanta **a lot** but it relies on an outdated `gettext` PR that was recently rejected (years after being approved).
+https://github.com/elixir-gettext/gettext/pull/305
+
+So I made "Caint", just to keep the show on the road.
+
+### What people are saying about `caint`: 
+
+> "Untested, inefficient and hacky."
+
+> "Totally unfit for public consumption."
+
+> "How is this supposed to work?"
 
 ## Get started
 
@@ -16,7 +27,6 @@ System.put_env("DEEPL_API_URL", "https://api-free.deepl.com/v2/")
 System.put_env("GETTEXT_DIR", "/home/my-project/priv/gettext")
 System.put_env("SOURCE_LOCALE", "en")
 ```
-
 
 ## Do the thing
 
