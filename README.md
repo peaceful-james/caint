@@ -12,8 +12,14 @@ So I made "Caint", just to keep the show on the road.
 ## Features
 
 - Bulk-translate locale-scoped PO files in a single step
+![Screenshot 2024-12-24 191018](https://github.com/user-attachments/assets/12ea5a7a-0ae3-4a8a-8ec8-a1e65eee3902)
+
 - See how "complete" a particular locale is.
+![Screenshot 2024-12-24 191046](https://github.com/user-attachments/assets/bfae84fe-18cc-45dc-917e-8a49c0f4de37)
+
 - Easily find missing translations (they are at the top of a locale's page).
+![Screenshot 2024-12-24 191108](https://github.com/user-attachments/assets/36007341-b814-4645-9dec-08506aadde20)
+
 - Absolutely nothing else.
 
 ### What people are saying about `caint`: 
