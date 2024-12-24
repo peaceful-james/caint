@@ -7,33 +7,13 @@ defmodule Caint do
   - "messages" refers to `Expo.Messages` which is their representation of a .po file
   """
 
-  @po_wildcard "**/*.po"
+  alias Caint.PoParsing
 
   def gettext_locales(gettext_dir) do
     gettext_dir
-    |> po_paths_in_priv()
+    |> PoParsing.po_paths_in_priv()
     |> Enum.map(&infer_gettext_locale_from_po_path/1)
     |> Enum.uniq()
-  end
-
-  def po_paths_in_priv(gettext_dir, locale \\ nil) do
-    gettext_dir
-    |> then(&if locale, do: Path.join(&1, locale), else: &1)
-    |> Path.join(@po_wildcard)
-    |> Path.wildcard()
-  end
-
-  def translations(gettext_dir, locale) do
-    gettext_dir
-    |> po_paths_in_priv(locale)
-    |> Enum.flat_map(fn po_path ->
-      domain = infer_domain_from_po_path(po_path)
-      messages = Expo.PO.parse_file!(po_path).messages
-
-      Enum.map(messages, fn message ->
-        %{message: message, domain: domain, locale: locale}
-      end)
-    end)
   end
 
   def message_translated?(%Expo.Message.Singular{} = message) do
@@ -49,7 +29,7 @@ defmodule Caint do
   def completion_percentage(gettext_dir, locale) do
     completion_details =
       gettext_dir
-      |> po_paths_in_priv(locale)
+      |> PoParsing.po_paths_in_priv(locale)
       |> Enum.reduce(%{total_messages_count: 0, total_untranslated_count: 0}, fn po_path, completion_details ->
         messages = Expo.PO.parse_file!(po_path)
         total_messages_in_po_file = Enum.count(messages.messages)
@@ -86,10 +66,6 @@ defmodule Caint do
   def infer_gettext_locale_from_po_path(po_path) do
     [_file, "LC_MESSAGES", locale | _rest] = po_path |> Path.split() |> Enum.reverse()
     locale
-  end
-
-  def infer_domain_from_po_path(po_path) do
-    Path.basename(po_path, ".po")
   end
 
   def write_le_po_file(po_path, messages) do

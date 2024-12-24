@@ -3,7 +3,8 @@ defmodule CaintWeb.CaintLive do
   use CaintWeb, :live_view
 
   alias Caint.Deepl
-  alias Caint.Plurals
+  # alias Caint.Plurals
+  alias Caint.Translations
 
   @initial_gettext_dir "../momo/priv/gettext"
 
@@ -245,7 +246,7 @@ defmodule CaintWeb.CaintLive do
 
   defp assign_translations(socket) do
     %{gettext_dir: gettext_dir, locale: locale} = socket.assigns
-    translations = if gettext_dir && locale, do: Caint.translations(gettext_dir, locale), else: []
+    translations = if gettext_dir && locale, do: Translations.translations(gettext_dir, locale), else: []
     assign(socket, :translations, translations)
   end
 
@@ -266,7 +267,7 @@ defmodule CaintWeb.CaintLive do
     %{"locale" => locale} = params
     %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
 
-    new_translations = Deepl.translate_all_untranslated(translations)
+    new_translations = Deepl.translate_all_untranslated(translations, locale)
 
     new_translations
     |> Enum.group_by(& &1.domain)
@@ -280,24 +281,21 @@ defmodule CaintWeb.CaintLive do
       original = Expo.PO.parse_file!(po_path)
       messages = Enum.map(same_domain_translations, & &1.message)
       new = %{original | messages: messages}
-      # Caint.write_le_po_file(po_path, new)
+      Caint.write_le_po_file(po_path, new)
     end)
 
-    put_flash(socket, :info, "Done translating :)")
-    # |> assign(:translations, new_translations)
+    socket
+    |> put_flash(:info, "Done translating :)")
+    |> assign(:translations, new_translations)
   end
 
-  defp solo_translate(socket, params) do
-    %{"msgid_str" => msgid_str, "locale" => locale} = params
-    {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
+  defp solo_translate(socket, _params) do
+    # %{"msgid_str" => msgid_str, "locale" => locale} = params
+    # {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
 
-    forms_struct
-    |> Plurals.plural_numbers_by_index()
-    |> IO.inspect()
-
-    %{translations: translations, gettext_dir: _gettext_dir} = socket.assigns
-    translation = Enum.find(translations, fn translation -> translation.message.msgid == [msgid_str] end)
-    IO.inspect(translation)
+    # Plurals.plural_numbers_by_index(forms_struct)
+    # %{translations: translations, gettext_dir: _gettext_dir} = socket.assigns
+    # translation = Enum.find(translations, fn translation -> translation.message.msgid == [msgid_str] end)
     socket
   end
 end
