@@ -12,4 +12,11 @@ defmodule Caint.PoParsing do
     |> Path.join(@po_wildcard)
     |> Path.wildcard()
   end
+
+  def delete_all_po_files do
+    :caint
+    |> Application.get_env(:gettext_dir)
+    |> po_paths_in_priv()
+    |> Enum.map(&File.rm!/1)
+  end
 end
