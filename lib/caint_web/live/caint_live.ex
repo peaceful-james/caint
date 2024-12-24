@@ -6,12 +6,12 @@ defmodule CaintWeb.CaintLive do
   # alias Caint.Plurals
   alias Caint.Translations
 
-  @initial_gettext_dir "../momo/priv/gettext"
-
   @impl LiveView
   def mount(_params, _session, socket) do
+    initial_gettext_dir = Application.get_env(:caint, :gettext_dir, "")
+
     socket
-    |> assign_gettext_dir(@initial_gettext_dir)
+    |> assign_gettext_dir(initial_gettext_dir)
     |> then(&{:ok, &1})
   end
 
