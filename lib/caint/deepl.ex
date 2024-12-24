@@ -4,6 +4,7 @@ defmodule Caint.Deepl do
   --header 'Content-Type: application/json' \
   """
 
+  alias Caint.Percentage
   alias Caint.Plurals
 
   @batch_size 50
@@ -12,6 +13,21 @@ defmodule Caint.Deepl do
   defp api_key, do: Application.get_env(:caint, :deepl_api_key)
   defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
 
+  def usage do
+    api_url()
+    |> Path.join("usage")
+    |> Req.get(auth: auth_header())
+  end
+
+  def usage_percent do
+    case usage() do
+      {:ok, %{body: %{"character_count" => character_count, "character_limit" => character_limit}}} ->
+        {:ok, Percentage.percentage(character_count, character_limit)}
+
+      {:error, _} ->
+        {:error, "Failed to get usage"}
+    end
+  end
 
   @doc """
   Return the DeepL language code for a given gettext locale.

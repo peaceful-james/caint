@@ -12,7 +12,20 @@ defmodule CaintWeb.CaintLive do
 
     socket
     |> assign_gettext_dir(initial_gettext_dir)
+    |> assign_deepl_usage_percent()
     |> then(&{:ok, &1})
+  end
+
+  defp assign_deepl_usage_percent(socket) do
+    case Deepl.usage_percent() do
+      {:ok, percentage} ->
+        assign(socket, :deepl_usage_percent, percentage)
+
+      {:error, _} ->
+        socket
+        |> assign(:deepl_usage_percent, nil)
+        |> put_flash(:error, "Failed to get DeepL usage")
+    end
   end
 
   @impl LiveView
@@ -29,6 +42,9 @@ defmodule CaintWeb.CaintLive do
   def render(assigns) do
     ~H"""
     <div id="caint-index-page">
+      <div>
+        DeepL usage: {@deepl_usage_percent |> to_string() |> Kernel.<>("%")}
+      </div>
       <.simple_form :let={f} for={@gettext_dir_form} phx-change="change-gettext-dir">
         <.input field={f[:gettext_dir]} label="Gettext directory" phx-debounce={500} />
       </.simple_form>

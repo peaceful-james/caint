@@ -7,6 +7,7 @@ defmodule Caint do
   - "messages" refers to `Expo.Messages` which is their representation of a .po file
   """
 
+  alias Caint.Percentage
   alias Caint.PoParsing
 
   def gettext_locales(gettext_dir) do
@@ -48,14 +49,7 @@ defmodule Caint do
         Decimal.new(0)
 
       true ->
-        total_messages_count = Decimal.new(completion_details.total_messages_count)
-        total_untranslated_count = Decimal.new(completion_details.total_untranslated_count)
-
-        total_messages_count
-        |> Decimal.sub(total_untranslated_count)
-        |> Decimal.div(total_messages_count)
-        |> Decimal.mult(100)
-        |> Decimal.round(2, :down)
+        Percentage.anti_percentage(completion_details.total_untranslated_count, completion_details.total_messages_count)
     end
   end
 
