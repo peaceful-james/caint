@@ -73,9 +73,6 @@ defmodule CaintWeb.CaintLive do
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
         </:col>
-        <:col :let={translation} label="">
-          <.solo_translate translation={translation} locale={@locale} />
-        </:col>
         <:col :let={translation} label="msgstr">
           <.msgstr translation={translation} />
         </:col>
@@ -122,26 +119,6 @@ defmodule CaintWeb.CaintLive do
     <p>
       {@msgid_str}
     </p>
-    """
-  end
-
-  attr :translation, :map, required: true
-  attr :locale, :string, required: true
-
-  defp solo_translate(assigns) do
-    %{translation: translation, locale: locale} = assigns
-    [msgid_str] = translation.message.msgid
-    assigns = %{msgid_str: msgid_str, locale: locale}
-
-    ~H"""
-    <.button
-      type="button"
-      phx-click="solo-translate"
-      phx-value-msgid_str={@msgid_str}
-      phx-value-locale={@locale}
-    >
-      Translate
-    </.button>
     """
   end
 
@@ -200,13 +177,6 @@ defmodule CaintWeb.CaintLive do
   def handle_event("translate-all-untranslated", params, socket) do
     socket
     |> translate_all_untranslated(params)
-    |> then(&{:noreply, &1})
-  end
-
-  @impl LiveView
-  def handle_event("solo-translate", params, socket) do
-    socket
-    |> solo_translate(params)
     |> then(&{:noreply, &1})
   end
 
@@ -287,15 +257,5 @@ defmodule CaintWeb.CaintLive do
     socket
     |> put_flash(:info, "Done translating :)")
     |> assign(:translations, new_translations)
-  end
-
-  defp solo_translate(socket, _params) do
-    # %{"msgid_str" => msgid_str, "locale" => locale} = params
-    # {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
-
-    # Plurals.plural_numbers_by_index(forms_struct)
-    # %{translations: translations, gettext_dir: _gettext_dir} = socket.assigns
-    # translation = Enum.find(translations, fn translation -> translation.message.msgid == [msgid_str] end)
-    socket
   end
 end
