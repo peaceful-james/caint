@@ -38,6 +38,7 @@ end
 config :caint, deepl_api_key: get_env_var_value.("DEEPL_API_KEY")
 config :caint, gettext_dir: get_env_var_value.("GETTEXT_DIR")
 config :caint, source_locale: get_env_var_value.("SOURCE_LOCALE")
+config :caint, deepl_api_url: get_env_var_value.("DEEPL_API_URL")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.

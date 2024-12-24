@@ -1,18 +1,25 @@
 # Caint
 
-To start your Phoenix server:
+Untested, inefficient, hacky translating of PO files for Elixir projects.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+Inspired a lot by (but not as good as) `kanta`.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+I used to use Kanta a lot but it relies on an outdated `gettext` PR that was recently rejected (years after being approved).
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Get started
 
-## Learn more
+Make a file `dev-secrets/.env.exs` with contents like this
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+```
+System.put_env("DEEPL_API_KEY", "xxxxxxx")
+System.put_env("DEEPL_API_URL", "https://api-free.deepl.com/v2/")
+System.put_env("GETTEXT_DIR", "/home/my-project/priv/gettext")
+System.put_env("SOURCE_LOCALE", "en")
+```
+
+
+## Do the thing
+
+```
+iex -S mix phx.server
+```

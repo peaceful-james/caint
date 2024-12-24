@@ -6,9 +6,9 @@ defmodule Caint.Deepl do
 
   alias Caint.Plurals
 
-  @api_url "https://api-free.deepl.com/v2/"
   @batch_size 50
 
+  defp api_url, do: Application.get_env(:caint, :deepl_api_url)
   defp api_key, do: Application.get_env(:caint, :deepl_api_key)
   defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
 
@@ -28,7 +28,7 @@ defmodule Caint.Deepl do
   end
 
   def translate(data) do
-    @api_url
+    api_url()
     |> Path.join("translate")
     |> Req.post(auth: auth_header(), json: data)
   end
