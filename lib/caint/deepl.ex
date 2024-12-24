@@ -34,7 +34,7 @@ defmodule Caint.Deepl do
   end
 
   def translate_all_untranslated(translations, locale) do
-    source_lang = language_code("en")
+    source_lang = language_code(Application.get_env(:caint, :source_locale))
     target_lang = language_code(locale)
     {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
     plural_numbers_by_index = Plurals.plural_numbers_by_index(forms_struct)
