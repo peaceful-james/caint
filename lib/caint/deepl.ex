@@ -124,18 +124,28 @@ defmodule Caint.Deepl do
     same_context_translatables_batch
     |> Enum.zip(deepl_results)
     |> Enum.map(fn {translatable, %{"text" => translated_text}} ->
-      Map.put(translatable, :translated_text, translated_text)
+      Map.put(translatable, :translated_text, replace_xml_tags_with_curly_brackets(translated_text))
     end)
   end
 
   defp to_translate_data(same_context_translatables_batch, context, source_lang, target_lang) do
-    text = Enum.map(same_context_translatables_batch, & &1.text)
+    text = Enum.map(same_context_translatables_batch, &replace_curly_brackets_with_xml_tags(&1.text))
 
     %{
       text: text,
       source_lang: source_lang,
       target_lang: target_lang,
-      context: context
+      context: context,
+      tag_handling: "xml",
+      ignore_tags: ["gettext_variable"]
     }
+  end
+
+  defp replace_curly_brackets_with_xml_tags(text) do
+    Regex.replace(~r/%{(.*)}/, text, fn _, x -> "<gettext_variable>#{x}</gettext_variable>" end)
+  end
+
+  defp replace_xml_tags_with_curly_brackets(text) do
+    Regex.replace(~r/<gettext_variable>(.*)<\/gettext_variable>/, text, fn _, x -> "%{#{x}}" end)
   end
 end
