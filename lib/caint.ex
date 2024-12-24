@@ -41,7 +41,7 @@ defmodule Caint do
   end
 
   def message_translated?(%Expo.Message.Plural{} = message) do
-    Enum.all?(message.msgstr, fn {plural_index, plural_msgstr} ->
+    Enum.all?(message.msgstr, fn {_plural_index, plural_msgstr} ->
       plural_msgstr != [""]
     end)
   end

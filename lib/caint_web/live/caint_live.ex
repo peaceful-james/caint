@@ -3,6 +3,7 @@ defmodule CaintWeb.CaintLive do
   use CaintWeb, :live_view
 
   alias Caint.Deepl
+  alias Caint.Plurals
 
   @initial_gettext_dir "../momo/priv/gettext"
 
@@ -71,6 +72,9 @@ defmodule CaintWeb.CaintLive do
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
         </:col>
+        <:col :let={translation} label="">
+          <.solo_translate translation={translation} locale={@locale} />
+        </:col>
         <:col :let={translation} label="msgstr">
           <.msgstr translation={translation} />
         </:col>
@@ -117,6 +121,26 @@ defmodule CaintWeb.CaintLive do
     <p>
       {@msgid_str}
     </p>
+    """
+  end
+
+  attr :translation, :map, required: true
+  attr :locale, :string, required: true
+
+  defp solo_translate(assigns) do
+    %{translation: translation, locale: locale} = assigns
+    [msgid_str] = translation.message.msgid
+    assigns = %{msgid_str: msgid_str, locale: locale}
+
+    ~H"""
+    <.button
+      type="button"
+      phx-click="solo-translate"
+      phx-value-msgid_str={@msgid_str}
+      phx-value-locale={@locale}
+    >
+      Translate
+    </.button>
     """
   end
 
@@ -175,6 +199,13 @@ defmodule CaintWeb.CaintLive do
   def handle_event("translate-all-untranslated", params, socket) do
     socket
     |> translate_all_untranslated(params)
+    |> then(&{:noreply, &1})
+  end
+
+  @impl LiveView
+  def handle_event("solo-translate", params, socket) do
+    socket
+    |> solo_translate(params)
     |> then(&{:noreply, &1})
   end
 
@@ -249,11 +280,25 @@ defmodule CaintWeb.CaintLive do
       original = Expo.PO.parse_file!(po_path)
       messages = Enum.map(same_domain_translations, & &1.message)
       new = %{original | messages: messages}
-      Caint.write_le_po_file(po_path, new)
+      # Caint.write_le_po_file(po_path, new)
     end)
 
     socket
     |> assign(:translations, new_translations)
     |> put_flash(:info, "Done translating :)")
+  end
+
+  defp solo_translate(socket, params) do
+    %{"msgid_str" => msgid_str, "locale" => locale} = params
+    {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
+
+    forms_struct
+    |> Plurals.plural_numbers_by_index()
+    |> IO.inspect()
+
+    %{translations: translations, gettext_dir: _gettext_dir} = socket.assigns
+    translation = Enum.find(translations, fn translation -> translation.message.msgid == [msgid_str] end)
+    IO.inspect(translation)
+    socket
   end
 end
