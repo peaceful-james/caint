@@ -36,8 +36,14 @@ defmodule Caint do
     end)
   end
 
-  def message_translated?(message) do
+  def message_translated?(%Expo.Message.Singular{} = message) do
     message.msgstr != [""]
+  end
+
+  def message_translated?(%Expo.Message.Plural{} = message) do
+    Enum.all?(message.msgstr, fn {plural_index, plural_msgstr} ->
+      plural_msgstr != [""]
+    end)
   end
 
   def completion_percentage(gettext_dir, locale) do
