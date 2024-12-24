@@ -12,11 +12,19 @@ defmodule Caint.Deepl do
   defp api_key, do: Application.get_env(:caint, :deepl_api_key)
   defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
 
+
+  @doc """
+  Return the DeepL language code for a given gettext locale.
+
+  https://developers.deepl.com/docs/resources/supported-languages
+
+  Note that Portuguse in Brazil is simply "pt" in gettext, but DeepL requires "PT-BR".
+  """
   def language_code(gettext_locale) do
-    gettext_locale
-    |> to_string()
-    |> String.replace("_", "-")
-    |> String.upcase()
+    case gettext_locale |> to_string() |> String.replace("_", "-") do
+      "pt" -> "PT-BR"
+      x -> String.upcase(x)
+    end
   end
 
   def translate(data) do
