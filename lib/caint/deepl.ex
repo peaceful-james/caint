@@ -31,22 +31,24 @@ defmodule Caint.Deepl do
     |> Enum.flat_map(fn {_context, same_context_translations} ->
       same_context_translations
       |> Enum.chunk_every(@batch_size)
-      |> Enum.flat_map(fn list_of_same_context_translations ->
-        {:ok, %{body: %{"translations" => deepl_results}}} =
-          list_of_same_context_translations
-          |> to_translate_data()
-          |> translate()
-
-        list_of_same_context_translations
-        |> Enum.zip(deepl_results)
-        |> Enum.map(fn {translation, %{"text" => translated_text}} ->
-          Map.update!(translation, :message, fn message ->
-            %{message | msgstr: [translated_text]}
-          end)
-        end)
-      end)
+      |> Enum.flat_map(&translate_same_context_translations(&1))
     end)
     |> Kernel.++(done)
+  end
+
+  defp translate_same_context_translations(list_of_same_context_translations) do
+    {:ok, %{body: %{"translations" => deepl_results}}} =
+      list_of_same_context_translations
+      |> to_translate_data()
+      |> translate()
+
+    list_of_same_context_translations
+    |> Enum.zip(deepl_results)
+    |> Enum.map(fn {translation, %{"text" => translated_text}} ->
+      Map.update!(translation, :message, fn message ->
+        %{message | msgstr: [translated_text]}
+      end)
+    end)
   end
 
   defp to_translate_data(list_of_same_context_translations) do

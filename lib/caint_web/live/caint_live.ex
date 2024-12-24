@@ -283,9 +283,8 @@ defmodule CaintWeb.CaintLive do
       # Caint.write_le_po_file(po_path, new)
     end)
 
-    socket
-    |> assign(:translations, new_translations)
-    |> put_flash(:info, "Done translating :)")
+    put_flash(socket, :info, "Done translating :)")
+    # |> assign(:translations, new_translations)
   end
 
   defp solo_translate(socket, params) do
