@@ -2,7 +2,16 @@ defmodule Caint.Plurals do
   @moduledoc """
   Inefficient, hacky way of getting "example" plural numbers for each plural index
   """
-  def plural_numbers_by_index(plural_form) do
+  alias Expo.PluralForms
+
+  @type plural_numbers_by_index :: %{non_neg_integer() => non_neg_integer()}
+
+  def build_plural_numbers_by_index_for_locale(locale) do
+    {:ok, forms_struct} = PluralForms.plural_form(locale)
+    plural_numbers_by_index(forms_struct)
+  end
+
+  defp plural_numbers_by_index(plural_form) do
     required_length = plural_form.nplurals
     acc = %{}
     number_to_try = 0

@@ -35,8 +35,7 @@ defmodule Caint.Deepl do
 
   @spec translate_all_untranslated([Translations.translation()], Gettext.locale()) :: [Translations.translation()]
   def translate_all_untranslated(translations, locale) do
-    {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
-    plural_numbers_by_index = Plurals.plural_numbers_by_index(forms_struct)
+    plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
     {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
 
     translatables_by_context =

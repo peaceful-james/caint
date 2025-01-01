@@ -1,10 +1,9 @@
 defmodule Caint.Translatables do
   @moduledoc false
 
+  alias Caint.Plurals
   alias Caint.Translations
   alias Gettext.Interpolation.Default
-
-  @type plural_numbers_by_index :: %{non_neg_integer() => non_neg_integer()}
 
   @type translatable :: %{
           translation: Translations.translation(),
@@ -13,7 +12,7 @@ defmodule Caint.Translatables do
           plural_number: nil | non_neg_integer()
         }
 
-  @spec to_translatables(Translations.translation(), plural_numbers_by_index) :: [translatable()]
+  @spec to_translatables(Translations.translation(), Plurals.plural_numbers_by_index()) :: [translatable()]
   def to_translatables(translation, plural_numbers_by_index) do
     case translation.message do
       %Expo.Message.Singular{} = message ->
