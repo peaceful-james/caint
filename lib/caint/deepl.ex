@@ -9,6 +9,7 @@ defmodule Caint.Deepl do
   alias Caint.Translatables
   alias Caint.Translations
 
+  @spec usage_percent() :: {:ok, Decimal.t()} | {:error, String.t()}
   def usage_percent do
     case Api.usage() do
       {:ok, %{body: %{"character_count" => character_count, "character_limit" => character_limit}}} ->
@@ -26,6 +27,7 @@ defmodule Caint.Deepl do
 
   Note that Portuguse in Brazil is simply "pt" in gettext, but DeepL requires "PT-BR".
   """
+  @spec language_code(Gettext.locale()) :: String.t()
   def language_code(gettext_locale) do
     case gettext_locale |> to_string() |> String.replace("_", "-") do
       "pt" -> "PT-BR"
