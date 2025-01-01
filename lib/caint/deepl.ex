@@ -1,28 +1,16 @@
 defmodule Caint.Deepl do
   @moduledoc """
-  --header 'Authorization: DeepL-Auth-Key [yourAuthKey]' \
-  --header 'Content-Type: application/json' \
+  DeepL integration high-level functions
   """
 
+  alias Caint.Deepl.Api
   alias Caint.Percentage
   alias Caint.Plurals
+  alias Caint.Translatables
   alias Caint.Translations
-  alias Gettext.Interpolation.Default
-
-  @batch_size 50
-
-  defp api_url, do: Application.get_env(:caint, :deepl_api_url)
-  defp api_key, do: Application.get_env(:caint, :deepl_api_key)
-  defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
-
-  def usage do
-    api_url()
-    |> Path.join("usage")
-    |> Req.get(auth: auth_header())
-  end
 
   def usage_percent do
-    case usage() do
+    case Api.usage() do
       {:ok, %{body: %{"character_count" => character_count, "character_limit" => character_limit}}} ->
         {:ok, Percentage.percentage(character_count, character_limit)}
 
@@ -45,25 +33,24 @@ defmodule Caint.Deepl do
     end
   end
 
-  def translate(data) do
-    api_url()
-    |> Path.join("translate")
-    |> Req.post(auth: auth_header(), json: data)
-  end
-
+  @spec translate_all_untranslated([Translations.translation()], Gettext.locale()) :: [Translations.translation()]
   def translate_all_untranslated(translations, locale) do
-    source_lang = language_code(Application.get_env(:caint, :source_locale))
-    target_lang = language_code(locale)
     {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
     plural_numbers_by_index = Plurals.plural_numbers_by_index(forms_struct)
     {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
 
-    untranslated
-    |> Enum.flat_map(&to_translatables(&1, plural_numbers_by_index))
-    |> Enum.group_by(& &1.translation.context)
+    translatables_by_context =
+      untranslated
+      |> Enum.flat_map(&Translatables.to_translatables(&1, plural_numbers_by_index))
+      |> Enum.group_by(& &1.translation.context)
+
+    source_lang = language_code(Application.get_env(:caint, :source_locale))
+    target_lang = language_code(locale)
+
+    translatables_by_context
     |> Enum.flat_map(fn {context, same_context_translatables} ->
       same_context_translatables
-      |> Enum.chunk_every(@batch_size)
+      |> Enum.chunk_every(Api.batch_size())
       |> Enum.flat_map(&translate_same_context_translatables_batch(&1, context, source_lang, target_lang))
     end)
     |> Enum.group_by(&{&1.translation.domain, &1.translation.message.msgid, &1.translation.message.msgctxt})
@@ -106,52 +93,11 @@ defmodule Caint.Deepl do
     Map.put(translation, :message, translated_message)
   end
 
-  @type translatable :: %{
-          translation: Translations.translation(),
-          text: String.t(),
-          plural_index: nil | non_neg_integer(),
-          plural_number: nil | non_neg_integer()
-        }
-  defp to_translatables(translation, plural_numbers_by_index) do
-    case translation.message do
-      %Expo.Message.Singular{} = message ->
-        text = Enum.join(message.msgid, "\n")
-
-        [
-          %{
-            translation: translation,
-            text: text,
-            plural_index: nil,
-            plural_number: nil
-          }
-        ]
-
-      %Expo.Message.Plural{} ->
-        to_translatables_for_plural(translation, plural_numbers_by_index)
-    end
-  end
-
-  def to_translatables_for_plural(translation, plural_numbers_by_index) do
-    Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
-      [msg] = if plural_number == 1, do: translation.message.msgid, else: translation.message.msgid_plural
-      interpolatable = Default.to_interpolatable(msg)
-      good_bindings = %{count: plural_number}
-      {:ok, text} = Default.runtime_interpolate(interpolatable, good_bindings)
-
-      %{
-        translation: translation,
-        text: text,
-        plural_index: plural_index,
-        plural_number: plural_number
-      }
-    end)
-  end
-
   defp translate_same_context_translatables_batch(same_context_translatables_batch, context, source_lang, target_lang) do
     {:ok, %{body: %{"translations" => deepl_results}}} =
       same_context_translatables_batch
       |> to_translate_data(context, source_lang, target_lang)
-      |> translate()
+      |> Api.translate()
 
     same_context_translatables_batch
     |> Enum.zip(deepl_results)
