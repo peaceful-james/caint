@@ -57,16 +57,13 @@ defmodule Caint.Deepl do
       case translated do
         [
           %{
-            translation: %{message: %Expo.Message.Singular{} = message} = translation,
+            translation: %{message: %Expo.Message.Singular{}} = translation,
             translated_text: translated_text
-          } =
-              _single_translated
+          }
         ] ->
           msgstr = [translated_text]
-          translated_message = Map.put(message, :msgstr, msgstr)
-          _new_translation = Map.put(translation, :message, translated_message)
-
-        # Map.put(single_translated, :translation, new_translation)     #
+          translated_message = Map.put(translation.message, :msgstr, msgstr)
+          Map.put(translation, :message, translated_message)
 
         [%{translation: %{message: %Expo.Message.Plural{}}} = _first_translated | _] = plural_translateds ->
           translate_all_untranslated_for_plural(plural_translateds)

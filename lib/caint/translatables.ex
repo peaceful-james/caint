@@ -1,8 +1,17 @@
 defmodule Caint.Translatables do
-  @moduledoc false
+  @moduledoc """
+  "Translatables" are maps containing translations and inferred info.
+
+  The extra info includes:
+  - The text of the translation
+  - The index of the plural form (if any)
+  - An example number of the plural form (if any)
+  """
 
   alias Caint.Plurals
   alias Caint.Translations
+  alias Expo.Message.Plural
+  alias Expo.Message.Singular
   alias Gettext.Interpolation.Default
 
   @type translatable :: %{
@@ -12,24 +21,28 @@ defmodule Caint.Translatables do
           plural_number: nil | non_neg_integer()
         }
 
+  @doc """
+  Builds a map of translatables
+  """
   @spec to_translatables(Translations.translation(), Plurals.plural_numbers_by_index()) :: [translatable()]
   def to_translatables(translation, plural_numbers_by_index) do
     case translation.message do
-      %Expo.Message.Singular{} = message ->
-        text = Enum.join(message.msgid, "\n")
-
-        [
-          %{
-            translation: translation,
-            text: text,
-            plural_index: nil,
-            plural_number: nil
-          }
-        ]
-
-      %Expo.Message.Plural{} ->
-        to_translatables_for_plural(translation, plural_numbers_by_index)
+      %Singular{} -> to_translatables_for_singular(translation)
+      %Plural{} -> to_translatables_for_plural(translation, plural_numbers_by_index)
     end
+  end
+
+  defp to_translatables_for_singular(translation) do
+    text = Enum.join(translation.message.msgid, "\n")
+
+    [
+      %{
+        translation: translation,
+        text: text,
+        plural_index: nil,
+        plural_number: nil
+      }
+    ]
   end
 
   defp to_translatables_for_plural(translation, plural_numbers_by_index) do
