@@ -28,12 +28,13 @@ defmodule Caint.DeeplTest do
       source_locale = "en"
       context = "labels"
       domain = "home page"
+      original_msgstr = %{0 => [""], 1 => [""], 2 => [""], 3 => [""], 4 => [""], 5 => [""]}
 
       translations = [
         %{
           message: %Plural{
             msgid: ["1 category"],
-            msgstr: %{0 => [""], 1 => [""], 2 => [""], 3 => [""], 4 => [""], 5 => [""]},
+            msgstr: original_msgstr,
             msgctxt: [context],
             msgid_plural: ["%{count} categories"]
           },
@@ -58,6 +59,8 @@ defmodule Caint.DeeplTest do
                  locale: ^source_locale
                }
              ] = result
+
+      assert translated_message.msgstr != original_msgstr
 
       assert translated_message.msgstr == %{
                0 => ["%{count} التصنيفات"],
