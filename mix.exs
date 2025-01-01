@@ -32,6 +32,8 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:dialyxir, "~> 1.4", only: [:dev]},
+      {:credo, "~> 1.7", only: [:dev]},
       {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
       {:req, "~> 0.5.8"},
       {:decimal, "~> 2.3"},
