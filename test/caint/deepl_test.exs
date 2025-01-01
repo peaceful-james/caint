@@ -14,4 +14,11 @@ defmodule Caint.DeeplTest do
       assert result == {:ok, Decimal.new("50.00")}
     end
   end
+
+  describe "language_code/1" do
+    test "works" do
+      assert "PT-BR" == Deepl.language_code("pt")
+      assert "ZH-HANT" == Deepl.language_code("zh_Hant")
+    end
+  end
 end
