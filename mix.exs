@@ -32,7 +32,7 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:excoveralls, "~> 0.18.3", only: [:test]},
+      {:excoveralls, "~> 0.18.3", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev]},
       {:credo, "~> 1.7", only: [:dev]},
       {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
