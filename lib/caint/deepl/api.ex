@@ -1,26 +1,17 @@
 defmodule Caint.Deepl.Api do
-  @moduledoc """
-  --header 'Authorization: DeepL-Auth-Key [yourAuthKey]' \
-  --header 'Content-Type: application/json' \
-  """
+  @moduledoc false
 
-  @batch_size 50
-  @spec batch_size() :: non_neg_integer()
-  def batch_size, do: @batch_size
+  alias Caint.Deepl.RealApiImpl
 
-  def usage do
-    api_url()
-    |> Path.join("usage")
-    |> Req.get(auth: auth_header())
-  end
+  @type result :: {:ok, Req.Response.t()} | {:error, Exception.t()}
 
-  def translate(data) do
-    api_url()
-    |> Path.join("translate")
-    |> Req.post(auth: auth_header(), json: data)
-  end
+  @callback batch_size() :: non_neg_integer()
+  @callback usage() :: result()
+  @callback translate(map()) :: result()
 
-  defp api_url, do: Application.get_env(:caint, :deepl_api_url)
-  defp api_key, do: Application.get_env(:caint, :deepl_api_key)
-  defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
+  def batch_size, do: impl().batch_size()
+  def usage, do: impl().usage()
+  def translate(data), do: impl().translate(data)
+
+  defp impl, do: Application.get_env(:caint, :deepl_api_impl) || RealApiImpl
 end
