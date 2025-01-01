@@ -232,7 +232,10 @@ defmodule CaintWeb.CaintLive do
 
   defp assign_translations(socket) do
     %{gettext_dir: gettext_dir, locale: locale} = socket.assigns
-    translations = if gettext_dir && locale, do: Translations.translations(gettext_dir, locale), else: []
+
+    translations =
+      if gettext_dir && locale, do: Translations.build_translations_from_po_files(gettext_dir, locale), else: []
+
     assign(socket, :translations, translations)
   end
 

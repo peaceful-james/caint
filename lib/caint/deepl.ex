@@ -54,39 +54,9 @@ defmodule Caint.Deepl do
     end)
     |> Enum.group_by(&{&1.translation.domain, &1.translation.message.msgid, &1.translation.message.msgctxt})
     |> Enum.map(fn {_messages_key, translated} ->
-      case translated do
-        [
-          %{
-            translation: %{message: %Expo.Message.Singular{}} = translation,
-            translated_text: translated_text
-          }
-        ] ->
-          msgstr = [translated_text]
-          translated_message = Map.put(translation.message, :msgstr, msgstr)
-          Map.put(translation, :message, translated_message)
-
-        [%{translation: %{message: %Expo.Message.Plural{}}} = _first_translated | _] = plural_translateds ->
-          translate_all_untranslated_for_plural(plural_translateds)
-      end
+      Translations.put_translated_message_on_translated(translated)
     end)
     |> Kernel.++(done)
-  end
-
-  defp translate_all_untranslated_for_plural(plural_translateds) do
-    [
-      %{translation: %{message: %Expo.Message.Plural{} = message} = translation} =
-        _first_translated
-      | _
-    ] = plural_translateds
-
-    msgstr =
-      Enum.reduce(plural_translateds, %{}, fn translated, msgstr ->
-        re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
-        Map.put(msgstr, translated.plural_index, [re_interpolated])
-      end)
-
-    translated_message = Map.put(message, :msgstr, msgstr)
-    Map.put(translation, :message, translated_message)
   end
 
   defp translate_same_context_translatables_batch(same_context_translatables_batch, context, source_lang, target_lang) do
