@@ -6,6 +6,8 @@ defmodule Caint.Deepl do
 
   alias Caint.Percentage
   alias Caint.Plurals
+  alias Caint.Translations
+  alias Gettext.Interpolation.Default
 
   @batch_size 50
 
@@ -68,7 +70,10 @@ defmodule Caint.Deepl do
     |> Enum.map(fn {_messages_key, translated} ->
       case translated do
         [
-          %{translation: %{message: %Expo.Message.Singular{} = message} = translation, translated_text: translated_text} =
+          %{
+            translation: %{message: %Expo.Message.Singular{} = message} = translation,
+            translated_text: translated_text
+          } =
               _single_translated
         ] ->
           msgstr = [translated_text]
@@ -77,23 +82,28 @@ defmodule Caint.Deepl do
 
         # Map.put(single_translated, :translation, new_translation)     #
 
-        [
-          %{translation: %{message: %Expo.Message.Plural{} = message} = translation} =
-            _first_translated
-          | _
-        ] = plural_translateds ->
-          msgstr =
-            Enum.reduce(plural_translateds, %{}, fn translated, msgstr ->
-              re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
-              Map.put(msgstr, translated.plural_index, [re_interpolated])
-            end)
-
-          translated_message = Map.put(message, :msgstr, msgstr)
-          _new_translation = Map.put(translation, :message, translated_message)
-          # Map.put(first_translated, :translation, new_translation)
+        [%{translation: %{message: %Expo.Message.Plural{}}} = _first_translated | _] = plural_translateds ->
+          translate_all_untranslated_for_plural(plural_translateds)
       end
     end)
     |> Kernel.++(done)
+  end
+
+  defp translate_all_untranslated_for_plural(plural_translateds) do
+    [
+      %{translation: %{message: %Expo.Message.Plural{} = message} = translation} =
+        _first_translated
+      | _
+    ] = plural_translateds
+
+    msgstr =
+      Enum.reduce(plural_translateds, %{}, fn translated, msgstr ->
+        re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
+        Map.put(msgstr, translated.plural_index, [re_interpolated])
+      end)
+
+    translated_message = Map.put(message, :msgstr, msgstr)
+    Map.put(translation, :message, translated_message)
   end
 
   @type translatable :: %{
@@ -116,27 +126,25 @@ defmodule Caint.Deepl do
           }
         ]
 
-      %Expo.Message.Plural{} = message ->
-        Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
-          [msg] =
-            if plural_number == 1 do
-              message.msgid
-            else
-              message.msgid_plural
-            end
-
-          interpolatable = Gettext.Interpolation.Default.to_interpolatable(msg)
-          good_bindings = %{count: plural_number}
-          {:ok, text} = Gettext.Interpolation.Default.runtime_interpolate(interpolatable, good_bindings)
-
-          %{
-            translation: translation,
-            text: text,
-            plural_index: plural_index,
-            plural_number: plural_number
-          }
-        end)
+      %Expo.Message.Plural{} ->
+        to_translatables_for_plural(translation, plural_numbers_by_index)
     end
+  end
+
+  def to_translatables_for_plural(translation, plural_numbers_by_index) do
+    Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
+      [msg] = if plural_number == 1, do: translation.message.msgid, else: translation.message.msgid_plural
+      interpolatable = Default.to_interpolatable(msg)
+      good_bindings = %{count: plural_number}
+      {:ok, text} = Default.runtime_interpolate(interpolatable, good_bindings)
+
+      %{
+        translation: translation,
+        text: text,
+        plural_index: plural_index,
+        plural_number: plural_number
+      }
+    end)
   end
 
   defp translate_same_context_translatables_batch(same_context_translatables_batch, context, source_lang, target_lang) do

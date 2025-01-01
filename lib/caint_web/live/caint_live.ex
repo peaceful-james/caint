@@ -257,7 +257,7 @@ defmodule CaintWeb.CaintLive do
 
     new_translations
     |> Enum.group_by(& &1.domain)
-    |> Enum.map(fn {domain, same_domain_translations} ->
+    |> Enum.each(fn {domain, same_domain_translations} ->
       po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", domain <> ".po"])
 
       unless File.exists?(po_path) do
