@@ -57,7 +57,15 @@ defmodule Caint.Translations do
       end)
 
     new_translation = put_translated_message_on_translated(updated_translatables)
-    [new_translation | others]
+    new_translations = [new_translation | others]
+
+    po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", new_translation.domain <> ".po"])
+
+    original = Expo.PO.parse_file!(po_path)
+    messages = Enum.map(new_translations, & &1.message)
+    new = %{original | messages: messages}
+    iodata = Expo.PO.compose(new)
+    File.write!(po_path, iodata)
   end
 
   defp build_context(message) do

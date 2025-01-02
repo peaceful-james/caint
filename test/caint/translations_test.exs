@@ -123,10 +123,10 @@ defmodule Caint.TranslationsTest do
       plural_index = nil
       new_text = "Manually entered by user"
       result = Translations.translate_single(singular_translation, gettext_dir, locale, plural_index, new_text)
-      assert result == [Translations]
+      assert result == :ok
       new_translations = Translations.build_translations_from_po_files(gettext_dir, locale)
-      new_singular_translation = Enum.find(new_translations, &(&1.msgid == singular_translation.msgid))
-      assert new_singular_translation.msgstr == [new_text]
+      new_singular_translation = Enum.find(new_translations, &(&1.message.msgid == singular_translation.message.msgid))
+      assert new_singular_translation.message.msgstr == [new_text]
     end
 
     test "works for plural"
