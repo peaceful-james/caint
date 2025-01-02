@@ -109,17 +109,19 @@ defmodule CaintWeb.CaintLive do
         rows={Enum.sort_by(@translations, &ExpoLogic.message_translated?(&1.message))}
       >
         <:col :let={translation} label="msgid">
-          <.msgid translation={translation} />
+          <div class="justify-self-end">
+            <.msgid translation={translation} />
+          </div>
         </:col>
         <:col :let={translation} label="msgstr">
-          <.maybe_msgstr translation={translation} />
-        </:col>
-        <:col :let={translation} label="Manually edit translation">
-          <.single_translation_form
-            translation={translation}
-            locale={@locale}
-            plural_numbers_by_index={@plural_numbers_by_index}
-          />
+          <div class="space-y-4">
+            <.maybe_msgstr translation={translation} />
+            <.single_translation_form
+              translation={translation}
+              locale={@locale}
+              plural_numbers_by_index={@plural_numbers_by_index}
+            />
+          </div>
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -161,7 +163,7 @@ defmodule CaintWeb.CaintLive do
     assigns = %{msgid_str: msgid_str}
 
     ~H"""
-    <p>
+    <p class="w-fit p-2 rounded-lg bg-cyan-100 text-balance">
       {@msgid_str}
     </p>
     """
@@ -239,7 +241,13 @@ defmodule CaintWeb.CaintLive do
       phx-value-plural_index={plural_index}
     >
       <div class="grow">
-        <.input field={f[:new_text]} phx-debounce={100} placeholder={placeholder} class="!mt-0" />
+        <.input
+          type="textarea"
+          field={f[:new_text]}
+          label="Manually edit translation"
+          phx-debounce={100}
+          placeholder={placeholder}
+        />
       </div>
       <.button>Save</.button>
     </.form>
