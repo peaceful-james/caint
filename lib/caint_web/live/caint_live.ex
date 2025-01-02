@@ -7,7 +7,6 @@ defmodule CaintWeb.CaintLive do
   alias Caint.Deepl
   alias Caint.ExpoLogic
   alias Caint.GettextLocales
-  # alias Caint.Plurals
   alias Caint.Translations
 
   @impl LiveView
@@ -148,22 +147,8 @@ defmodule CaintWeb.CaintLive do
   attr :translation, :map, required: true
 
   defp maybe_msgstr(assigns) do
-    %{translation: translation} = assigns
-
-    if ExpoLogic.message_translated?(translation.message) do
-      msgstr_strs =
-        case translation.message.msgstr do
-          msgstr_list when is_list(msgstr_list) -> msgstr_list
-          msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
-        end
-
-      assigns = %{msgstr_strs: msgstr_strs}
-
-      ~H"""
-      <p :for={msgstr_str <- @msgstr_strs}>
-        {msgstr_str}
-      </p>
-      """
+    if ExpoLogic.message_translated?(assigns.translation.message) do
+      msgstr(assigns)
     else
       ~H"""
       <p class="uppercase text-red-500">
@@ -171,6 +156,24 @@ defmodule CaintWeb.CaintLive do
       </p>
       """
     end
+  end
+
+  attr :translation, :map, required: true
+
+  defp msgstr(assigns) do
+    msgstr_strs =
+      case assigns.translation.message.msgstr do
+        msgstr_list when is_list(msgstr_list) -> msgstr_list
+        msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
+      end
+
+    assigns = %{msgstr_strs: msgstr_strs}
+
+    ~H"""
+    <p :for={msgstr_str <- @msgstr_strs}>
+      {msgstr_str}
+    </p>
+    """
   end
 
   attr :translation, :map, required: true
@@ -272,7 +275,14 @@ defmodule CaintWeb.CaintLive do
     %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
 
     new_translations = Deepl.translate_all_untranslated(translations, locale)
+    write_new_translations(new_translations, gettext_dir, locale)
 
+    socket
+    |> put_flash(:info, "Done translating :)")
+    |> assign(:translations, new_translations)
+  end
+
+  defp write_new_translations(new_translations, gettext_dir, locale) do
     new_translations
     |> Enum.group_by(& &1.domain)
     |> Enum.each(fn {domain, same_domain_translations} ->
@@ -285,16 +295,8 @@ defmodule CaintWeb.CaintLive do
       original = Expo.PO.parse_file!(po_path)
       messages = Enum.map(same_domain_translations, & &1.message)
       new = %{original | messages: messages}
-      write_le_po_file(po_path, new)
+      iodata = Expo.PO.compose(new)
+      File.write!(po_path, iodata)
     end)
-
-    socket
-    |> put_flash(:info, "Done translating :)")
-    |> assign(:translations, new_translations)
-  end
-
-  defp write_le_po_file(po_path, messages) do
-    iodata = Expo.PO.compose(messages)
-    File.write!(po_path, iodata)
   end
 end
