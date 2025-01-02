@@ -15,6 +15,12 @@ defmodule Caint.DeeplTest do
       result = Deepl.usage_percent()
       assert result == {:ok, Decimal.new("50.00")}
     end
+
+    test "returns error when unable to fetch" do
+      expect(MockApiImpl, :usage, 1, fn -> {:error, :request_failed_somehow} end)
+      result = Deepl.usage_percent()
+      assert result == {:error, "Failed to get usage"}
+    end
   end
 
   describe "language_code/1" do
