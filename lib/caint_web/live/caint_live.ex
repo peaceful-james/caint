@@ -7,6 +7,8 @@ defmodule CaintWeb.CaintLive do
   alias Caint.Deepl
   alias Caint.ExpoLogic
   alias Caint.GettextLocales
+  alias Caint.Interpolatables
+  alias Caint.Plurals
   alias Caint.Translations
   alias Caint.Translations.Translation
 
@@ -35,9 +37,10 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def handle_params(unsigned_params, _uri, socket) do
     locale = Map.get(unsigned_params, "locale")
+    plural_numbers_by_index = if locale, do: Plurals.build_plural_numbers_by_index_for_locale(locale), else: %{}
 
     socket
-    |> assign(%{locale: locale})
+    |> assign(%{locale: locale, plural_numbers_by_index: plural_numbers_by_index})
     |> assign_translations()
     |> then(&{:noreply, &1})
   end
@@ -57,10 +60,18 @@ defmodule CaintWeb.CaintLive do
         locales={@locales}
         completion_percentages={@completion_percentages}
       />
-      <.locale_page :if={@live_action == :locale} locale={@locale} translations={@translations} />
+      <.locale_page
+        :if={@live_action == :locale}
+        locale={@locale}
+        translations={@translations}
+        plural_numbers_by_index={@plural_numbers_by_index}
+      />
     </div>
     """
   end
+
+  attr :locales, :list, required: true
+  attr :completion_percentages, :map, required: true
 
   def index_page(assigns) do
     ~H"""
@@ -78,6 +89,10 @@ defmodule CaintWeb.CaintLive do
     </div>
     """
   end
+
+  attr :locale, :string, required: true
+  attr :translations, :list, required: true
+  attr :plural_numbers_by_index, :map, required: true
 
   defp locale_page(assigns) do
     ~H"""
@@ -99,8 +114,12 @@ defmodule CaintWeb.CaintLive do
         <:col :let={translation} label="msgstr">
           <.maybe_msgstr translation={translation} />
         </:col>
-        <:col :let={translation} label="edit">
-          <.single_translation_form translation={translation} locale={@locale} />
+        <:col :let={translation} label="Manually edit translation">
+          <.single_translation_form
+            translation={translation}
+            locale={@locale}
+            plural_numbers_by_index={@plural_numbers_by_index}
+          />
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -182,32 +201,48 @@ defmodule CaintWeb.CaintLive do
 
   attr :translation, Translation, required: true
   attr :locale, :string, required: true
+  attr :plural_numbers_by_index, :map, required: true
 
   defp single_translation_form(assigns) do
-    text_lists_by_plural_index =
+    text_and_placeholder_by_plural_index =
       case assigns.translation.message.msgstr do
-        msgstr_list when is_list(msgstr_list) -> %{nil => msgstr_list}
-        msgstr_map when is_map(msgstr_map) -> msgstr_map
+        msgstr_list when is_list(msgstr_list) ->
+          placeholder = Enum.join(assigns.translation.message.msgid, "\n")
+          %{nil => %{text: msgstr_list, placeholder: placeholder}}
+
+        msgstr_map when is_map(msgstr_map) ->
+          Enum.reduce(msgstr_map, %{}, fn {plural_index, msgstr_list}, msgstr_map ->
+            plural_number = Map.get(assigns.plural_numbers_by_index, plural_index)
+            # msg_text_field = if plural_number == 1, do: :msgid, else: :msgid_plural
+            # interpolated = assigns.translation.message |> Map.get(msg_text_field ) |> Enum.join("\n")
+            numbered = Interpolatables.hyu(assigns.translation, plural_number)
+            placeholder = "e.g. \"#{numbered}\""
+            Map.put(msgstr_map, plural_index, %{text: msgstr_list, placeholder: placeholder})
+          end)
       end
 
-    assigns = assign(assigns, %{text_lists_by_plural_index: text_lists_by_plural_index})
+    assigns = assign(assigns, %{text_and_placeholder_by_plural_index: text_and_placeholder_by_plural_index})
 
     ~H"""
-    <.simple_form
+    <.form
       :let={f}
-      :for={{plural_index, text_list} <- @text_lists_by_plural_index}
-      for={to_form(%{"new_text" => Enum.join(text_list, "\n")})}
+      :for={
+        {plural_index, %{text: text, placeholder: placeholder}} <-
+          @text_and_placeholder_by_plural_index
+      }
+      class={["flex justify-start gap-x-4 items-center", "border rounded-lg p-2", "bg-gray-300"]}
+      for={to_form(%{"new_text" => text})}
       phx-submit="translate-single"
       phx-value-locale={@locale}
       phx-value-msgid={@translation.message.msgid}
       phx-value-msgctxt={@translation.message.msgctxt}
       phx-value-plural_index={plural_index}
     >
-      <.input field={f[:new_text]} label="" phx-debounce={100} />
-      <:actions>
-        <.button>Save</.button>
-      </:actions>
-    </.simple_form>
+      <div class="grow">
+        <.input field={f[:new_text]} phx-debounce={100} placeholder={placeholder} class="!mt-0" />
+      </div>
+      <.button>Save</.button>
+    </.form>
     """
   end
 
@@ -273,7 +308,7 @@ defmodule CaintWeb.CaintLive do
     locales = if gettext_dir, do: GettextLocales.list(gettext_dir), else: []
 
     socket
-    |> assign(:locale, nil)
+    |> assign(%{locale: nil, plural_numbers_by_index: %{}})
     |> assign(:locales, locales)
     |> assign(:completion_percentages, %{})
   end
