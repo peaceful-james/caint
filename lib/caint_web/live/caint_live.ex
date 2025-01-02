@@ -97,7 +97,7 @@ defmodule CaintWeb.CaintLive do
           <.msgid translation={translation} />
         </:col>
         <:col :let={translation} label="msgstr">
-          <.msgstr translation={translation} />
+          <.maybe_msgstr translation={translation} />
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -147,26 +147,30 @@ defmodule CaintWeb.CaintLive do
 
   attr :translation, :map, required: true
 
-  defp msgstr(assigns) do
+  defp maybe_msgstr(assigns) do
     %{translation: translation} = assigns
 
-    msgstr_strs =
-      case translation.message.msgstr do
-        [""] -> [:missing]
-        [msgstr_str] -> [msgstr_str]
-        msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
-      end
+    if ExpoLogic.message_translated?(translation.message) do
+      msgstr_strs =
+        case translation.message.msgstr do
+          msgstr_list when is_list(msgstr_list) -> msgstr_list
+          msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
+        end
 
-    assigns = %{msgstr_strs: msgstr_strs}
+      assigns = %{msgstr_strs: msgstr_strs}
 
-    ~H"""
-    <p
-      :for={msgstr_str <- @msgstr_strs}
-      class={[if(msgstr_str == :missing, do: "uppercase text-red-500")]}
-    >
-      {msgstr_str}
-    </p>
-    """
+      ~H"""
+      <p :for={msgstr_str <- @msgstr_strs}>
+        {msgstr_str}
+      </p>
+      """
+    else
+      ~H"""
+      <p class="uppercase text-red-500">
+        Missing
+      </p>
+      """
+    end
   end
 
   attr :translation, :map, required: true
