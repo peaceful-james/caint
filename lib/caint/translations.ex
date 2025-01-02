@@ -5,7 +5,7 @@ defmodule Caint.Translations do
   This map is both input and output for translations.
   """
   alias Caint.PoParsing
-  alias Caint.Translatables
+  alias Caint.Translatables.Translatable
   alias Caint.Translations.Translation
   alias Expo.Message.Plural
   alias Expo.Message.Singular
@@ -25,7 +25,7 @@ defmodule Caint.Translations do
     end)
   end
 
-  @spec put_translated_message_on_translated([Translatables.translatable()]) :: Translation.t()
+  @spec put_translated_message_on_translated([Translatable.t()]) :: Translation.t()
   def put_translated_message_on_translated(translated) do
     case translated do
       [%{translation: %{message: %Singular{}}} = singular_translated] ->

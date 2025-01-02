@@ -1,30 +1,19 @@
 defmodule Caint.Translatables do
   @moduledoc """
-  "Translatables" are maps containing translations and inferred info.
-
-  The extra info includes:
-  - The text of the translation
-  - The index of the plural form (if any)
-  - An example number of the plural form (if any)
+  Functions for building `Caint.Translatables.Translatable.t()` structs.
   """
 
   alias Caint.Plurals
+  alias Caint.Translatables.Translatable
   alias Caint.Translations.Translation
   alias Expo.Message.Plural
   alias Expo.Message.Singular
   alias Gettext.Interpolation.Default
 
-  @type translatable :: %{
-          translation: Translation.t(),
-          text: String.t(),
-          plural_index: nil | non_neg_integer(),
-          plural_number: nil | non_neg_integer()
-        }
-
   @doc """
-  Builds a map of translatables
+  Builds a list of `Caint.Translatables.Translatable.t()` structs.
   """
-  @spec to_translatables(Translation.t(), Plurals.plural_numbers_by_index()) :: [translatable()]
+  @spec to_translatables(Translation.t(), Plurals.plural_numbers_by_index()) :: [Translatable.t()]
   def to_translatables(translation, plural_numbers_by_index) do
     case translation.message do
       %Singular{} -> to_translatables_for_singular(translation)
