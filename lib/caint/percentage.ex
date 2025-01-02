@@ -10,32 +10,17 @@ defmodule Caint.Percentage do
 
   e.g. 19/20 = 95% done
   """
-  @spec percentage(input_number, input_number) :: Decimal.t()
-  def percentage(top, bottom) do
+  @spec percentage(input_number, input_number, Decimal.rounding()) :: Decimal.t()
+  def percentage(top, bottom, rounding \\ :down) do
     top_dec = Decimal.new(top)
     bottom_dec = Decimal.new(bottom)
-    perc(top_dec, bottom_dec)
+    perc(top_dec, bottom_dec, rounding)
   end
 
-  @doc """
-  Effectively returns "% left to do"
-
-  e.g. 19/20 = 5% left to do
-  """
-  @spec anti_percentage(input_number, input_number) :: Decimal.t()
-  def anti_percentage(top, bottom) do
-    top_dec = Decimal.new(top)
-    bottom_dec = Decimal.new(bottom)
-
-    bottom_dec
-    |> Decimal.sub(top_dec)
-    |> perc(bottom_dec)
-  end
-
-  defp perc(top_dec, bottom_dec) do
+  defp perc(top_dec, bottom_dec, rounding) do
     top_dec
     |> Decimal.mult(100)
     |> Decimal.div(bottom_dec)
-    |> Decimal.round(2, :down)
+    |> Decimal.round(2, rounding)
   end
 end
