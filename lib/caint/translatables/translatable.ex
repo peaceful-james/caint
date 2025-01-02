@@ -26,7 +26,7 @@ defmodule Caint.Translatables.Translatable do
 
   alias Caint.Translations.Translation
 
-  @type t :: %{
+  @type t :: %__MODULE__{
           translation: Translation.t(),
           text: String.t(),
           translated_text: String.t(),

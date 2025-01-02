@@ -27,7 +27,7 @@ defmodule Caint.Translations.Translation do
   """
   @type domain :: String.t()
 
-  @type t :: %{
+  @type t :: %__MODULE__{
           message: Singular.t() | Plural.t(),
           context: context(),
           domain: domain(),
