@@ -34,6 +34,7 @@ defmodule Caint.Translations.Translation do
           locale: Gettext.locale()
         }
 
+  @enforce_keys [:message, :context, :domain, :locale]
   defstruct message: nil,
             context: "",
             domain: "",

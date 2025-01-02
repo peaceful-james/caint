@@ -32,6 +32,8 @@ defmodule Caint.Translatables.Translatable do
           plural_index: nil | non_neg_integer(),
           plural_number: nil | non_neg_integer()
         }
+
+  @enforce_keys [:translation, :text, :plural_index, :plural_number]
   defstruct translation: nil,
             text: "",
             plural_index: nil,
