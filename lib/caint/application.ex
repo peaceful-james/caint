@@ -8,7 +8,6 @@ defmodule Caint.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      CaintWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:caint, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Caint.PubSub},
       CaintWeb.Endpoint
