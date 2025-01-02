@@ -8,6 +8,8 @@ Auto-translating of PO files for the lazy dev
 
 ![Screenshot 2024-12-24 191018](https://github.com/user-attachments/assets/12ea5a7a-0ae3-4a8a-8ec8-a1e65eee3902)
 
+- Do single translations manually, using simple form input.
+
 - See how "complete" a particular locale is.
 
 ![Screenshot 2024-12-24 191046](https://github.com/user-attachments/assets/bfae84fe-18cc-45dc-917e-8a49c0f4de37)
@@ -16,15 +18,13 @@ Auto-translating of PO files for the lazy dev
 
 ![Screenshot 2024-12-24 191108](https://github.com/user-attachments/assets/36007341-b814-4645-9dec-08506aadde20)
 
-- Absolutely nothing else.
-
 ## What people are saying about Caint: 
 
-> "Untested, inefficient and hacky."
+> "Inefficient and hard to understand."
 
-> "Totally unfit for public consumption."
+> "Better than nothing, I guess."
 
-> "How is this supposed to work?"
+> "Please, dark mode. Please."
 
 ## First-time setup
 
