@@ -12,5 +12,12 @@ defmodule Caint.CompletionTest do
       # total_done / total = (1 + 1) / (5 + 2) = 2 / 7 =  0.2857
       assert Completion.percentage(gettext_dir, locale) == Decimal.new("28.57")
     end
+
+    test "returns 100 if there are no messages" do
+      gettext_dir = Application.get_env(:caint, :gettext_dir)
+      locale = "de"
+      # there are no messages
+      assert Completion.percentage(gettext_dir, locale) == Decimal.new("100.00")
+    end
   end
 end

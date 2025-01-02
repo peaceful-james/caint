@@ -23,7 +23,7 @@ defmodule Caint.Completion do
       end)
 
     if completion_details.total_messages_count == 0 do
-      Decimal.new(100)
+      Decimal.new("100.00")
     else
       Percentage.percentage(completion_details.total_translated_count, completion_details.total_messages_count)
     end
