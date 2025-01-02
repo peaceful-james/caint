@@ -237,7 +237,6 @@ defmodule CaintWeb.CaintLive do
     |> assign(:gettext_dir_form, to_form(%{"gettext_dir" => gettext_dir}))
     |> init_locales()
     |> calculate_all_completion_percentages()
-    |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
   end
 
   defp assign_translations(socket) do
@@ -258,7 +257,9 @@ defmodule CaintWeb.CaintLive do
         put_flash(socket, :error, "#{gettext_dir} is not a directory")
 
       true ->
-        assign_gettext_dir(socket, gettext_dir)
+        socket
+        |> assign_gettext_dir(gettext_dir)
+        |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
     end
   end
 
