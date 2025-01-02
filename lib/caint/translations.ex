@@ -38,11 +38,17 @@ defmodule Caint.Translations do
     end
   end
 
+  @doc """
+  The fields that, if equal, are assumed to be the same Expo.Message
+  """
+  @spec translation_matching_fields() :: [atom()]
+  def translation_matching_fields, do: [:msgid, :msgctxt]
+
   @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), non_neg_integer() | nil, String.t()) :: term()
   def translate_single(translation, gettext_dir, locale, plural_index, new_text) do
     plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
     translations = build_translations_from_po_files(gettext_dir, locale)
-    matching_fields = [:msgid, :msgctxt]
+    matching_fields = translation_matching_fields()
     search_match = Map.take(translation.message, matching_fields)
     {[to_change], others} = Enum.split_with(translations, &(Map.take(&1.message, matching_fields) == search_match))
     translatables = Translatables.to_translatables(to_change, plural_numbers_by_index)

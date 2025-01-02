@@ -210,6 +210,13 @@ defmodule CaintWeb.CaintLive do
     |> then(&{:noreply, &1})
   end
 
+  @impl LiveView
+  def handle_event("translate-single", params, socket) do
+    socket
+    |> translate_single(params)
+    |> then(&{:noreply, &1})
+  end
+
   defp calculate_all_completion_percentages(socket) do
     %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
 
@@ -269,6 +276,16 @@ defmodule CaintWeb.CaintLive do
         |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
     end
   end
+
+  defp translate_single(socket, params) do
+    %{"locale" => locale, "plural_index" => plural_index, "new_text" => new_text, "msgid" => _msgid, "msgctxt" => _msgctxt} = params
+    %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
+    matching_fields =  Translations.translation_matching_fields()
+    search_match = matching_fields |> Enum.map(&to_string/1) |> then(&Map.take(params, &1))
+    translation = Enum.find(translations, &Map.take(&1.message, matching_fields ) == search_match)
+    :ok = Translations.translate_single(translation, gettext_dir, locale, plural_index, new_text)
+    put_flash(socket, :info, "Saved that translation 👍")
+    end
 
   defp translate_all_untranslated(socket, params) do
     %{"locale" => locale} = params
