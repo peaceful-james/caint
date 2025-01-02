@@ -1,5 +1,5 @@
 defmodule Caint.DeeplTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Mox
 

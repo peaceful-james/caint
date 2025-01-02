@@ -3,17 +3,22 @@ defmodule Caint.Deepl.RealApiImpl do
   --header 'Authorization: DeepL-Auth-Key [yourAuthKey]' \
   --header 'Content-Type: application/json' \
   """
+  @behaviour Caint.Deepl.Api
 
+  alias Caint.Deepl.Api
+
+  @impl Api
   @batch_size 50
-  @spec batch_size() :: non_neg_integer()
   def batch_size, do: @batch_size
 
+  @impl Api
   def usage do
     api_url()
     |> Path.join("usage")
     |> Req.get(auth: auth_header())
   end
 
+  @impl Api
   def translate(data) do
     api_url()
     |> Path.join("translate")

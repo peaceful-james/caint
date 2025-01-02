@@ -1,12 +1,14 @@
 defmodule Caint.Mocks.MockDeeplApiImpl do
   @moduledoc false
+  @behaviour Caint.Deepl.Api
+
   alias Caint.Deepl.Api
   alias Req.Response
 
-  @spec batch_size() :: non_neg_integer()
+  @impl Api
   def batch_size, do: 50
 
-  @spec usage() :: Api.result()
+  @impl Api
   def usage do
     {:ok,
      %Response{
@@ -18,7 +20,7 @@ defmodule Caint.Mocks.MockDeeplApiImpl do
      }}
   end
 
-  @spec translate(map()) :: Api.result()
+  @impl Api
   def translate(_data) do
     {:ok,
      %Response{

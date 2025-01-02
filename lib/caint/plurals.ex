@@ -6,6 +6,7 @@ defmodule Caint.Plurals do
 
   @type plural_numbers_by_index :: %{non_neg_integer() => non_neg_integer()}
 
+  @spec build_plural_numbers_by_index_for_locale(Gettext.locale()) :: plural_numbers_by_index()
   def build_plural_numbers_by_index_for_locale(locale) do
     {:ok, forms_struct} = PluralForms.plural_form(locale)
     plural_numbers_by_index(forms_struct)
