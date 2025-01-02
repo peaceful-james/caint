@@ -4,6 +4,7 @@ defmodule Caint.Deepl do
   """
 
   alias Caint.Deepl.Api
+  alias Caint.ExpoLogic
   alias Caint.Percentage
   alias Caint.Plurals
   alias Caint.Translatables
@@ -39,7 +40,7 @@ defmodule Caint.Deepl do
   @spec translate_all_untranslated([Translation.t()], Gettext.locale()) :: [Translation.t()]
   def translate_all_untranslated(translations, locale) do
     plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
-    {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
+    {done, untranslated} = Enum.split_with(translations, &ExpoLogic.message_translated?(&1.message))
 
     translatables_by_context =
       untranslated

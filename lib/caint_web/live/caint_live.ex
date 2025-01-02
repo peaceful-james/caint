@@ -2,7 +2,9 @@ defmodule CaintWeb.CaintLive do
   @moduledoc false
   use CaintWeb, :live_view
 
+  alias Caint.Completion
   alias Caint.Deepl
+  alias Caint.ExpoLogic
   alias Caint.GettextLocales
   # alias Caint.Plurals
   alias Caint.Translations
@@ -86,7 +88,10 @@ defmodule CaintWeb.CaintLive do
       <.button type="button" phx-click="translate-all-untranslated" phx-value-locale={@locale}>
         Translate all "Missing"
       </.button>
-      <.table id="users" rows={Enum.sort_by(@translations, &Caint.message_translated?(&1.message))}>
+      <.table
+        id="users"
+        rows={Enum.sort_by(@translations, &ExpoLogic.message_translated?(&1.message))}
+      >
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
         </:col>
@@ -183,7 +188,7 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def handle_event("calc-percent", %{"locale" => locale}, socket) do
     %{gettext_dir: gettext_dir} = socket.assigns
-    percentage = Caint.completion_percentage(gettext_dir, locale)
+    percentage = Completion.percentage(gettext_dir, locale)
 
     socket
     |> update(:completion_percentages, &Map.put(&1, locale, percentage))
@@ -203,7 +208,7 @@ defmodule CaintWeb.CaintLive do
     completion_percentages =
       if gettext_dir do
         Enum.reduce(locales, %{}, fn locale, completion_percentages ->
-          percentage = Caint.completion_percentage(gettext_dir, locale)
+          percentage = Completion.percentage(gettext_dir, locale)
           Map.put(completion_percentages, locale, percentage)
         end)
       else
