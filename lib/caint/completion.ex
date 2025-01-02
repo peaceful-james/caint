@@ -22,12 +22,10 @@ defmodule Caint.Completion do
         |> Map.update!(:total_translated_count, &(&1 + total_translated_in_po_file))
       end)
 
-    cond do
-      completion_details.total_messages_count == 0 ->
-        Decimal.new(100)
-
-      true ->
-        Percentage.percentage(completion_details.total_translated_count, completion_details.total_messages_count)
+    if completion_details.total_messages_count == 0 do
+      Decimal.new(100)
+    else
+      Percentage.percentage(completion_details.total_translated_count, completion_details.total_messages_count)
     end
   end
 end
