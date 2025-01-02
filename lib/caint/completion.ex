@@ -7,6 +7,7 @@ defmodule Caint.Completion do
   alias Caint.Percentage
   alias Caint.PoParsing
 
+  @spec percentage(PoParsing.gettext_dir(), Gettext.locale()) :: Decimal.t()
   def percentage(gettext_dir, locale) do
     completion_details =
       gettext_dir
