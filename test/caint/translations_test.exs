@@ -44,7 +44,7 @@ defmodule Caint.TranslationsTest do
                }
              ] = result
 
-      assert Enum.all?(result, &(&1.domain == "caint\\ testing"))
+      assert Enum.all?(result, &(&1.domain == "caint testing"))
       assert Enum.all?(result, &(&1.locale == "ar"))
     end
   end
@@ -109,6 +109,13 @@ defmodule Caint.TranslationsTest do
   end
 
   describe "translate_single/4" do
+    setup _context do
+      file = "test/support/priv/gettext/ar/LC_MESSAGES/caint testing.po"
+      backup= file <> ".backup"
+      File.cp!(file, backup)
+      on_exit(fn -> File.rename!(backup, file) end)
+    end
+
     test "works for singular" do
       gettext_dir = Application.get_env(:caint, :gettext_dir)
       locale = "ar"
