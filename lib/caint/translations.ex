@@ -4,7 +4,9 @@ defmodule Caint.Translations do
 
   This map is both input and output for translations.
   """
+  alias Caint.Plurals
   alias Caint.PoParsing
+  alias Caint.Translatables
   alias Caint.Translatables.Translatable
   alias Caint.Translations.Translation
   alias Expo.Message.Plural
@@ -36,7 +38,26 @@ defmodule Caint.Translations do
     end
   end
 
-  def translate_single(msgid, msgctxt, locale, domain) do
+  # @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), String.t()) :: term()
+  def translate_single(translation, gettext_dir, locale, plural_index, new_text) do
+    plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
+    translations = build_translations_from_po_files(gettext_dir, locale)
+    matching_fields = [:msgid, :msgctxt]
+    search_match = Map.take(translation.message, matching_fields)
+    {[to_change], others} = Enum.split_with(translations, &(Map.take(&1.message, matching_fields) == search_match))
+    translatables = Translatables.to_translatables(to_change, plural_numbers_by_index)
+
+    updated_translatables =
+      Enum.map(translatables, fn translatable ->
+        if translatable.plural_index == plural_index && translatable.translation == to_change do
+          %{translatable | translated_text: new_text}
+        else
+          translatable
+        end
+      end)
+
+    new_translation = put_translated_message_on_translated(updated_translatables)
+    [new_translation | others]
   end
 
   defp build_context(message) do
