@@ -111,7 +111,7 @@ defmodule Caint.TranslationsTest do
   describe "translate_single/4" do
     setup _context do
       file = "test/support/priv/gettext/ar/LC_MESSAGES/caint testing.po"
-      backup= file <> ".backup"
+      backup = file <> ".backup"
       File.cp!(file, backup)
       on_exit(fn -> File.rename!(backup, file) end)
     end
@@ -136,6 +136,32 @@ defmodule Caint.TranslationsTest do
       assert new_singular_translation.message.msgstr == [new_text]
     end
 
-    test "works for plural"
+    test "works for plural" do
+      gettext_dir = Application.get_env(:caint, :gettext_dir)
+      locale = "ar"
+      translations = Translations.build_translations_from_po_files(gettext_dir, locale)
+
+      plural_translation =
+        Enum.find(translations, fn
+          %Translation{message: %Plural{}} -> true
+          _ -> false
+        end)
+
+      plural_index = 0
+      new_text = "Manually entered by user"
+      result = Translations.translate_single(plural_translation, gettext_dir, locale, plural_index, new_text)
+      assert result == :ok
+      new_translations = Translations.build_translations_from_po_files(gettext_dir, locale)
+      new_plural_translation = Enum.find(new_translations, &(&1.message.msgid == plural_translation.message.msgid))
+
+      assert new_plural_translation.message.msgstr == %{
+               0 => ["Manually entered by user"],
+               1 => [""],
+               2 => [""],
+               3 => [""],
+               4 => [""],
+               5 => [""]
+             }
+    end
   end
 end

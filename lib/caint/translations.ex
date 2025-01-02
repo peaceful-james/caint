@@ -92,10 +92,16 @@ defmodule Caint.Translations do
       | _
     ] = plural_translateds
 
+    IO.inspect(plural_translateds)
+
     msgstr =
-      Enum.reduce(plural_translateds, %{}, fn translated, msgstr ->
-        re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
-        Map.put(msgstr, translated.plural_index, [re_interpolated])
+      Enum.reduce(plural_translateds, translation.message.msgstr || %{}, fn translated, msgstr ->
+        if translated.translated_text do
+          re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
+          Map.put(msgstr, translated.plural_index, [re_interpolated])
+        else
+          msgstr
+        end
       end)
 
     translated_message = Map.put(message, :msgstr, msgstr)
