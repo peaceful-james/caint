@@ -28,13 +28,16 @@ Auto-translating of PO files for the lazy dev
 
 ## First-time setup
 
-Make a file `dev-secrets/.env.exs` with contents like this
+Make a file `config/dev_secrets.exs` with contents like this
 
-```
-System.put_env("DEEPL_API_KEY", "xxxxxxx")
-System.put_env("DEEPL_API_URL", "https://api-free.deepl.com/v2/")
-System.put_env("GETTEXT_DIR", "/home/my-project/priv/gettext")
-System.put_env("SOURCE_LOCALE", "en")
+```elixir
+import Config
+
+config :caint,
+  deepl_api_key: "xxxxxxx",
+  deepl_api_url: "https://api-free.deepl.com/v2/",
+  gettext_dir: "/home/my-project/priv/gettext",
+  source_locale: "en"
 ```
 
 ## Run it locally

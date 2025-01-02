@@ -16,3 +16,9 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+config :caint,
+  deepl_api_key: "xxxxxxx",
+  deepl_api_url: "https://api-free.deepl.com/v2/",
+  gettext_dir: "test/support/priv/gettext",
+  source_locale: "en"

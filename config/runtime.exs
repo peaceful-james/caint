@@ -7,21 +7,6 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block at the end of the file contains prod specific runtime configuration.
 
-# Gets an environment variable's value, or the given default value.
-# If in prod env, the given default value is ignored.
-# If there is no value, in prod env, an error is raised
-# This prevents starting the app in production with missing config
-get_env_var_value = fn
-  env_var_name ->
-    value = System.get_env(env_var_name)
-
-    if is_nil(value),
-      do: raise("environment variable #{env_var_name} is missing."),
-      else: value
-end
-
-if config_env() in [:dev, :test], do: Code.eval_file("./dev-secrets/.env.exs")
-
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
@@ -34,11 +19,6 @@ if config_env() in [:dev, :test], do: Code.eval_file("./dev-secrets/.env.exs")
 if System.get_env("PHX_SERVER") do
   config :caint, CaintWeb.Endpoint, server: true
 end
-
-config :caint, deepl_api_key: get_env_var_value.("DEEPL_API_KEY")
-config :caint, gettext_dir: get_env_var_value.("GETTEXT_DIR")
-config :caint, source_locale: get_env_var_value.("SOURCE_LOCALE")
-config :caint, deepl_api_url: get_env_var_value.("DEEPL_API_URL")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.

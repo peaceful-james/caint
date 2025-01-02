@@ -5,7 +5,7 @@ defmodule Caint.CompletionTest do
 
   describe "percentage/2" do
     test "returns the percentage of the top number in relation to the bottom number" do
-      gettext_dir = "test/support/priv/gettext"
+      gettext_dir = Application.get_env(:caint, :gettext_dir)
       locale = "ar"
       # there are 5 single translations, 1 done
       # there are 2 plural translations, 1 done.
