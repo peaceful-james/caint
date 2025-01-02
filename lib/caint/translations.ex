@@ -44,10 +44,21 @@ defmodule Caint.Translations do
   @spec translation_matching_fields() :: [atom()]
   def translation_matching_fields, do: [:msgid, :msgctxt]
 
-  @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), non_neg_integer() | nil, String.t()) :: term()
+  @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), non_neg_integer() | nil, String.t()) ::
+          :ok
   def translate_single(translation, gettext_dir, locale, plural_index, new_text) do
     plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
-    translations = build_translations_from_po_files(gettext_dir, locale)
+    po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", translation.domain <> ".po"])
+
+    domain = infer_domain_from_po_path(po_path)
+    messages = Expo.PO.parse_file!(po_path).messages
+
+    translations =
+      Enum.map(messages, fn message ->
+        context = build_context(message)
+        %Translation{message: message, domain: domain, context: context, locale: locale}
+      end)
+
     matching_fields = translation_matching_fields()
     search_match = Map.take(translation.message, matching_fields)
     {[to_change], others} = Enum.split_with(translations, &(Map.take(&1.message, matching_fields) == search_match))
