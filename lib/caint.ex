@@ -10,13 +10,6 @@ defmodule Caint do
   alias Caint.Percentage
   alias Caint.PoParsing
 
-  def gettext_locales(gettext_dir) do
-    gettext_dir
-    |> PoParsing.po_paths_in_priv()
-    |> Enum.map(&infer_gettext_locale_from_po_path/1)
-    |> Enum.uniq()
-  end
-
   def message_translated?(%Expo.Message.Singular{} = message) do
     message.msgstr != [""]
   end
@@ -51,15 +44,6 @@ defmodule Caint do
       true ->
         Percentage.anti_percentage(completion_details.total_untranslated_count, completion_details.total_messages_count)
     end
-  end
-
-  def infer_language_from_messages(messages) do
-    Expo.Messages.get_header(messages, "language")
-  end
-
-  def infer_gettext_locale_from_po_path(po_path) do
-    [_file, "LC_MESSAGES", locale | _rest] = po_path |> Path.split() |> Enum.reverse()
-    locale
   end
 
   def write_le_po_file(po_path, messages) do

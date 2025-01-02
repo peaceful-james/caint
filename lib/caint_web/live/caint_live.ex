@@ -3,6 +3,7 @@ defmodule CaintWeb.CaintLive do
   use CaintWeb, :live_view
 
   alias Caint.Deepl
+  alias Caint.GettextLocales
   # alias Caint.Plurals
   alias Caint.Translations
 
@@ -214,7 +215,7 @@ defmodule CaintWeb.CaintLive do
 
   defp init_locales(socket) do
     %{gettext_dir: gettext_dir} = socket.assigns
-    locales = if gettext_dir, do: Caint.gettext_locales(gettext_dir), else: []
+    locales = if gettext_dir, do: GettextLocales.list(gettext_dir), else: []
 
     socket
     |> assign(:locale, nil)
