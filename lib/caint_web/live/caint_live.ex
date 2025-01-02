@@ -187,27 +187,35 @@ defmodule CaintWeb.CaintLive do
     """
   end
 
+  defp infer_msg_txt_field(plural_number) do
+    if plural_number == 1, do: :msgid, else: :msgid_plural
+  end
+
+  defp build_text_and_placeholder_by_plural_index(translation, plural_numbers_by_index) do
+    case translation.message.msgstr do
+      msgstr_list when is_list(msgstr_list) ->
+        placeholder = Enum.join(translation.message.msgid, "\n")
+        %{nil => %{text: msgstr_list, placeholder: placeholder}}
+
+      msgstr_map when is_map(msgstr_map) ->
+        Enum.reduce(msgstr_map, %{}, fn {plural_index, msgstr_list}, msgstr_map ->
+          plural_number = Map.get(plural_numbers_by_index, plural_index, 0)
+          msg_text_field = infer_msg_txt_field(plural_number)
+          interpolated = translation.message |> Map.get(msg_text_field) |> Enum.join("\n")
+          numbered = Interpolatables.plural_numbered_string(translation, plural_number)
+          placeholder = "\"#{interpolated}\", as in \"#{numbered}\""
+          Map.put(msgstr_map, plural_index, %{text: msgstr_list, placeholder: placeholder})
+        end)
+    end
+  end
+
   attr :translation, Translation, required: true
   attr :locale, :string, required: true
   attr :plural_numbers_by_index, :map, required: true
 
   defp single_translation_form(assigns) do
     text_and_placeholder_by_plural_index =
-      case assigns.translation.message.msgstr do
-        msgstr_list when is_list(msgstr_list) ->
-          placeholder = Enum.join(assigns.translation.message.msgid, "\n")
-          %{nil => %{text: msgstr_list, placeholder: placeholder}}
-
-        msgstr_map when is_map(msgstr_map) ->
-          Enum.reduce(msgstr_map, %{}, fn {plural_index, msgstr_list}, msgstr_map ->
-            plural_number = Map.get(assigns.plural_numbers_by_index, plural_index)
-            msg_text_field = if plural_number == 1, do: :msgid, else: :msgid_plural
-            interpolated = assigns.translation.message |> Map.get(msg_text_field) |> Enum.join("\n")
-            numbered = Interpolatables.hyu(assigns.translation, plural_number)
-            placeholder = "\"#{interpolated}\", as in \"#{numbered}\""
-            Map.put(msgstr_map, plural_index, %{text: msgstr_list, placeholder: placeholder})
-          end)
-      end
+      build_text_and_placeholder_by_plural_index(assigns.translation, assigns.plural_numbers_by_index)
 
     assigns = assign(assigns, %{text_and_placeholder_by_plural_index: text_and_placeholder_by_plural_index})
 

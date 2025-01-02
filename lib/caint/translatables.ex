@@ -37,7 +37,7 @@ defmodule Caint.Translatables do
 
   defp to_translatables_for_plural(translation, plural_numbers_by_index) do
     Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
-      text = Interpolatables.hyu(translation, plural_number)
+      text = Interpolatables.plural_numbered_string(translation, plural_number)
 
       %Translatable{
         translation: translation,
