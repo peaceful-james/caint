@@ -71,8 +71,9 @@ defmodule Caint.Deepl do
 
     same_context_translatables_batch
     |> Enum.zip(deepl_results)
-    |> Enum.map(fn {translatable, %{"text" => translated_text}} ->
-      Map.put(translatable, :translated_text, replace_xml_tags_with_curly_brackets(translated_text))
+    |> Enum.map(fn {translatable, %{"text" => xml_tagged_translated_text}} ->
+      translated_text = replace_xml_tags_with_curly_brackets(xml_tagged_translated_text)
+      %{translatable | translated_text: translated_text}
     end)
   end
 

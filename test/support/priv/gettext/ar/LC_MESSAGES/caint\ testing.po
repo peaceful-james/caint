@@ -23,7 +23,7 @@ msgctxt "nouns"
 msgid "Help"
 msgstr ""
 
-msgctxt "errors"
+msgctxt ""
 msgid "should be %{count} byte(s)"
 msgid_plural "should be %{count} byte(s)"
 msgstr[0] ""

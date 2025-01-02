@@ -25,9 +25,10 @@ defmodule Caint.Translatables do
     text = Enum.join(translation.message.msgid, "\n")
 
     [
-      %{
+      %Translatable{
         translation: translation,
         text: text,
+        translated_text: nil,
         plural_index: nil,
         plural_number: nil
       }
@@ -41,9 +42,10 @@ defmodule Caint.Translatables do
       good_bindings = %{count: plural_number}
       {:ok, text} = Default.runtime_interpolate(interpolatable, good_bindings)
 
-      %{
+      %Translatable{
         translation: translation,
         text: text,
+        translated_text: nil,
         plural_index: plural_index,
         plural_number: plural_number
       }

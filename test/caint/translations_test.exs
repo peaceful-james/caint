@@ -36,7 +36,7 @@ defmodule Caint.TranslationsTest do
                },
                %Translation{
                  message: %Plural{msgid: ["should be %{count} byte(s)"]},
-                 context: "errors"
+                 context: nil
                },
                %Translation{
                  message: %Plural{msgid: ["should be %{count} character(s)"]},
