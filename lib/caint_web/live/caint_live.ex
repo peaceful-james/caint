@@ -109,13 +109,14 @@ defmodule CaintWeb.CaintLive do
         rows={Enum.sort_by(@translations, &ExpoLogic.message_translated?(&1.message))}
       >
         <:col :let={translation} label="msgid">
-          <div class="justify-self-end">
-            <.msgid translation={translation} />
-          </div>
+          <.msgid translation={translation} />
         </:col>
         <:col :let={translation} label="msgstr">
           <div class="space-y-4">
-            <.maybe_msgstr translation={translation} />
+            <.missing
+              :if={!ExpoLogic.message_translated?(translation.message)}
+              translation={translation}
+            />
             <.single_translation_form
               translation={translation}
               locale={@locale}
@@ -159,44 +160,29 @@ defmodule CaintWeb.CaintLive do
 
   defp msgid(assigns) do
     %{translation: translation} = assigns
-    [msgid_str] = translation.message.msgid
-    assigns = %{msgid_str: msgid_str}
+    msgid_str = Enum.join(translation.message.msgid, "\n")
+
+    msgid_plural_str =
+      if Map.has_key?(translation.message, :msgid_plural) do
+        Enum.join(translation.message.msgid_plural, "\n")
+      end
+
+    assigns = %{msgid_str: msgid_str, msgid_plural_str: msgid_plural_str}
 
     ~H"""
     <p class="w-fit p-2 rounded-lg bg-cyan-100 text-balance">
       {@msgid_str}
     </p>
+    <p :if={@msgid_plural_str} class="w-fit mt-2 p-2 rounded-lg bg-cyan-100 text-balance">
+      {@msgid_plural_str}
+    </p>
     """
   end
 
-  attr :translation, Translation, required: true
-
-  defp maybe_msgstr(assigns) do
-    if ExpoLogic.message_translated?(assigns.translation.message) do
-      msgstr(assigns)
-    else
-      ~H"""
-      <p class="uppercase text-red-500">
-        Missing
-      </p>
-      """
-    end
-  end
-
-  attr :translation, Translation, required: true
-
-  defp msgstr(assigns) do
-    msgstr_strs =
-      case assigns.translation.message.msgstr do
-        msgstr_list when is_list(msgstr_list) -> msgstr_list
-        msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
-      end
-
-    assigns = %{msgstr_strs: msgstr_strs}
-
+  defp missing(assigns) do
     ~H"""
-    <p :for={msgstr_str <- @msgstr_strs}>
-      {msgstr_str}
+    <p class="uppercase text-red-500">
+      Missing
     </p>
     """
   end
@@ -215,10 +201,10 @@ defmodule CaintWeb.CaintLive do
         msgstr_map when is_map(msgstr_map) ->
           Enum.reduce(msgstr_map, %{}, fn {plural_index, msgstr_list}, msgstr_map ->
             plural_number = Map.get(assigns.plural_numbers_by_index, plural_index)
-            # msg_text_field = if plural_number == 1, do: :msgid, else: :msgid_plural
-            # interpolated = assigns.translation.message |> Map.get(msg_text_field ) |> Enum.join("\n")
+            msg_text_field = if plural_number == 1, do: :msgid, else: :msgid_plural
+            interpolated = assigns.translation.message |> Map.get(msg_text_field) |> Enum.join("\n")
             numbered = Interpolatables.hyu(assigns.translation, plural_number)
-            placeholder = "e.g. \"#{numbered}\""
+            placeholder = "\"#{interpolated}\", as in \"#{numbered}\""
             Map.put(msgstr_map, plural_index, %{text: msgstr_list, placeholder: placeholder})
           end)
       end
@@ -244,7 +230,7 @@ defmodule CaintWeb.CaintLive do
         <.input
           type="textarea"
           field={f[:new_text]}
-          label="Manually edit translation"
+          label={"Translation for " <> placeholder}
           phx-debounce={100}
           placeholder={placeholder}
         />
