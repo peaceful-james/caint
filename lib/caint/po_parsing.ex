@@ -15,14 +15,16 @@ defmodule Caint.PoParsing do
     |> Path.wildcard()
   end
 
-  @doc """
-  Dangerous! Deletes all the PO files. I hope you're using git.
-  """
-  @spec delete_all_po_files() :: [:ok]
-  def delete_all_po_files do
-    :caint
-    |> Application.get_env(:gettext_dir)
-    |> po_paths_in_priv()
-    |> Enum.map(&File.rm!/1)
+  if Caint.env() == :dev do
+    @doc """
+    Dangerous! Deletes all the PO files. I hope you're using git.
+    """
+    @spec delete_all_po_files() :: [:ok]
+    def delete_all_po_files do
+      :caint
+      |> Application.get_env(:gettext_dir)
+      |> po_paths_in_priv()
+      |> Enum.map(&File.rm!/1)
+    end
   end
 end
