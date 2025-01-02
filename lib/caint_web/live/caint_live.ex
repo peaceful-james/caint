@@ -230,11 +230,14 @@ defmodule CaintWeb.CaintLive do
   end
 
   defp assign_gettext_dir(socket, gettext_dir) do
+    Application.put_env(:caint, :gettext_dir, gettext_dir)
+
     socket
     |> assign(:gettext_dir, gettext_dir)
     |> assign(:gettext_dir_form, to_form(%{"gettext_dir" => gettext_dir}))
     |> init_locales()
     |> calculate_all_completion_percentages()
+    |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
   end
 
   defp assign_translations(socket) do
