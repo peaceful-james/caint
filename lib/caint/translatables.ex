@@ -9,13 +9,13 @@ defmodule Caint.Translatables do
   """
 
   alias Caint.Plurals
-  alias Caint.Translations
+  alias Caint.Translations.Translation
   alias Expo.Message.Plural
   alias Expo.Message.Singular
   alias Gettext.Interpolation.Default
 
   @type translatable :: %{
-          translation: Translations.translation(),
+          translation: Translation.t(),
           text: String.t(),
           plural_index: nil | non_neg_integer(),
           plural_number: nil | non_neg_integer()
@@ -24,7 +24,7 @@ defmodule Caint.Translatables do
   @doc """
   Builds a map of translatables
   """
-  @spec to_translatables(Translations.translation(), Plurals.plural_numbers_by_index()) :: [translatable()]
+  @spec to_translatables(Translation.t(), Plurals.plural_numbers_by_index()) :: [translatable()]
   def to_translatables(translation, plural_numbers_by_index) do
     case translation.message do
       %Singular{} -> to_translatables_for_singular(translation)

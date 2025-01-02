@@ -6,17 +6,11 @@ defmodule Caint.Translations do
   """
   alias Caint.PoParsing
   alias Caint.Translatables
+  alias Caint.Translations.Translation
   alias Expo.Message.Plural
   alias Expo.Message.Singular
 
-  @type translation :: %{
-          message: Expo.Message.t(),
-          context: String.t(),
-          domain: String.t(),
-          locale: String.t()
-        }
-
-  @spec build_translations_from_po_files(PoParsing.gettext_dir(), Gettext.locale() | nil) :: [translation()]
+  @spec build_translations_from_po_files(PoParsing.gettext_dir(), Gettext.locale() | nil) :: [Translation.t()]
   def build_translations_from_po_files(gettext_dir, locale) do
     gettext_dir
     |> PoParsing.po_paths_in_priv(locale)
@@ -26,12 +20,12 @@ defmodule Caint.Translations do
 
       Enum.map(messages, fn message ->
         context = build_context(message)
-        %{message: message, domain: domain, context: context, locale: locale}
+        %Translation{message: message, domain: domain, context: context, locale: locale}
       end)
     end)
   end
 
-  @spec put_translated_message_on_translated([Translatables.translatable()]) :: translation()
+  @spec put_translated_message_on_translated([Translatables.translatable()]) :: Translation.t()
   def put_translated_message_on_translated(translated) do
     case translated do
       [%{translation: %{message: %Singular{}}} = singular_translated] ->

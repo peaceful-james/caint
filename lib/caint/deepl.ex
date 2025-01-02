@@ -8,6 +8,7 @@ defmodule Caint.Deepl do
   alias Caint.Plurals
   alias Caint.Translatables
   alias Caint.Translations
+  alias Caint.Translations.Translation
 
   @spec usage_percent() :: {:ok, Decimal.t()} | {:error, String.t()}
   def usage_percent do
@@ -35,7 +36,7 @@ defmodule Caint.Deepl do
     end
   end
 
-  @spec translate_all_untranslated([Translations.translation()], Gettext.locale()) :: [Translations.translation()]
+  @spec translate_all_untranslated([Translation.t()], Gettext.locale()) :: [Translation.t()]
   def translate_all_untranslated(translations, locale) do
     plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
     {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
