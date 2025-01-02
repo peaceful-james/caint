@@ -26,9 +26,6 @@ defmodule Caint.Completion do
       completion_details.total_messages_count == 0 ->
         Decimal.new(100)
 
-      completion_details.total_translated_count == completion_details.total_messages_count ->
-        Decimal.new(0)
-
       true ->
         Percentage.percentage(completion_details.total_translated_count, completion_details.total_messages_count)
     end
