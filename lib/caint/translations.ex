@@ -28,10 +28,10 @@ defmodule Caint.Translations do
   @spec put_translated_message_on_translated([Translatable.t()]) :: Translation.t()
   def put_translated_message_on_translated(translated) do
     case translated do
-      [%{translation: %{message: %Singular{}}} = singular_translated] ->
+      [%Translatable{translation: %{message: %Singular{}}} = singular_translated] ->
         put_translated_message_on_translation_for_singular(singular_translated)
 
-      [%{translation: %{message: %Plural{}}} | _] = plural_translateds ->
+      [%Translatable{translation: %{message: %Plural{}}} | _] = plural_translateds ->
         put_translated_message_on_translation_for_plural(plural_translateds)
     end
   end
@@ -50,7 +50,7 @@ defmodule Caint.Translations do
   defp put_translated_message_on_translation_for_singular(singular_translated) do
     msgstr = [singular_translated.translated_text]
     translated_message = Map.put(singular_translated.translation.message, :msgstr, msgstr)
-    Map.put(singular_translated.translation, :message, translated_message)
+    %{singular_translated.translation | message: translated_message}
   end
 
   defp put_translated_message_on_translation_for_plural(plural_translateds) do
@@ -67,6 +67,6 @@ defmodule Caint.Translations do
       end)
 
     translated_message = Map.put(message, :msgstr, msgstr)
-    Map.put(translation, :message, translated_message)
+    %{translation | message: translated_message}
   end
 end

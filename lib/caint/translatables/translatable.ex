@@ -29,13 +29,15 @@ defmodule Caint.Translatables.Translatable do
   @type t :: %{
           translation: Translation.t(),
           text: String.t(),
+          translated_text: String.t(),
           plural_index: nil | non_neg_integer(),
           plural_number: nil | non_neg_integer()
         }
 
-  @enforce_keys [:translation, :text, :plural_index, :plural_number]
+  @enforce_keys [:translation, :text, :translated_text, :plural_index, :plural_number]
   defstruct translation: nil,
             text: "",
+            translated_text: "",
             plural_index: nil,
             plural_number: nil
 end

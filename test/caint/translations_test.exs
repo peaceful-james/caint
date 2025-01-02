@@ -1,6 +1,7 @@
 defmodule Caint.TranslationsTest do
   use ExUnit.Case
 
+  alias Caint.Translatables.Translatable
   alias Caint.Translations
   alias Caint.Translations.Translation
   alias Expo.Message.Plural
@@ -48,8 +49,62 @@ defmodule Caint.TranslationsTest do
     end
   end
 
-  describe "put_translated_message_on_translated/2" do
-    test "works for singular"
-    test "works for plural"
+  describe "put_translated_message_on_translated/1" do
+    test "works for singular" do
+      translated_text = "translated text"
+
+      singular_translatable = %Translatable{
+        translation: %Translation{
+          message: %Singular{msgid: ["msgid"], msgstr: [""]},
+          context: "context",
+          domain: "domain",
+          locale: "en"
+        },
+        text: "text",
+        translated_text: translated_text,
+        plural_index: nil,
+        plural_number: nil
+      }
+
+      result = Translations.put_translated_message_on_translated([singular_translatable])
+      assert %Translation{message: %Singular{msgstr: [^translated_text]}} = result
     end
+
+    test "works for plural" do
+      translated_text_0 = "1 mot"
+      translated_text_1 = "2 mots"
+      expected_translated_msgstr = %{0 => ["%{count} mot"], 1 => ["%{count} mots"]}
+
+      plural_translatable_0 = %Translatable{
+        translation: %Translation{
+          message: %Plural{msgid: ["%{count} thing"], msgid_plural: ["%{count} things"], msgstr: %{0 => [""], 1 => [""]}},
+          context: "context",
+          domain: "domain",
+          locale: "fr"
+        },
+        text: "text",
+        translated_text: translated_text_0,
+        plural_index: 0,
+        plural_number: 1
+      }
+
+      plural_translatable_1 = %Translatable{
+        translation: %Translation{
+          message: %Plural{msgid: ["%{count} thing"], msgid_plural: ["%{count} things"], msgstr: %{0 => [""], 1 => [""]}},
+          context: "context",
+          domain: "domain",
+          locale: "fr"
+        },
+        text: "text",
+        translated_text: translated_text_1,
+        plural_index: 1,
+        plural_number: 2
+      }
+
+      plural_translatables = [plural_translatable_0, plural_translatable_1]
+
+      result = Translations.put_translated_message_on_translated(plural_translatables)
+      assert %Translation{message: %Plural{msgstr: ^expected_translated_msgstr}} = result
+    end
+  end
 end
