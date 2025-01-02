@@ -276,11 +276,16 @@ defmodule CaintWeb.CaintLive do
       original = Expo.PO.parse_file!(po_path)
       messages = Enum.map(same_domain_translations, & &1.message)
       new = %{original | messages: messages}
-      Caint.write_le_po_file(po_path, new)
+      write_le_po_file(po_path, new)
     end)
 
     socket
     |> put_flash(:info, "Done translating :)")
     |> assign(:translations, new_translations)
+  end
+
+  defp write_le_po_file(po_path, messages) do
+    iodata = Expo.PO.compose(messages)
+    File.write!(po_path, iodata)
   end
 end
