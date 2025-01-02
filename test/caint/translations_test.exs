@@ -47,4 +47,9 @@ defmodule Caint.TranslationsTest do
       assert Enum.all?(result, &(&1.locale == "ar"))
     end
   end
+
+  describe "put_translated_message_on_translated/2" do
+    test "works for singular"
+    test "works for plural"
+    end
 end
