@@ -92,8 +92,6 @@ defmodule Caint.Translations do
       | _
     ] = plural_translateds
 
-    IO.inspect(plural_translateds)
-
     msgstr =
       Enum.reduce(plural_translateds, translation.message.msgstr || %{}, fn translated, msgstr ->
         if translated.translated_text do
