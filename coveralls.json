@@ -1,5 +1,6 @@
 {
   "skip_files": [
+    "lib/caint/deepl/real_api_impl.ex",
     "lib/caint_web/components/core_components.ex",
     "lib/caint_web/components/layouts.ex",
     "lib/caint_web/endpoint.ex",
