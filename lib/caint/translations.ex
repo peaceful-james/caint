@@ -38,7 +38,7 @@ defmodule Caint.Translations do
     end
   end
 
-  # @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), String.t()) :: term()
+  @spec translate_single(Translation.t(), PoParsing.gettext_dir(), Gettext.locale(), non_neg_integer() | nil, String.t()) :: term()
   def translate_single(translation, gettext_dir, locale, plural_index, new_text) do
     plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
     translations = build_translations_from_po_files(gettext_dir, locale)
