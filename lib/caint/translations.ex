@@ -36,6 +36,9 @@ defmodule Caint.Translations do
     end
   end
 
+  def translate_single(msgid, msgctxt, locale, domain) do
+  end
+
   defp build_context(message) do
     case message.msgctxt do
       [""] -> nil

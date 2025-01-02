@@ -107,4 +107,9 @@ defmodule Caint.TranslationsTest do
       assert %Translation{message: %Plural{msgstr: ^expected_translated_msgstr}} = result
     end
   end
+
+  describe "translate_single" do
+    test "works for singular"
+    test "works for plural"
+  end
 end
