@@ -3,12 +3,12 @@ defmodule Caint.Translatables do
   Functions for building `Caint.Translatables.Translatable.t()` structs.
   """
 
+  alias Caint.Interpolatables
   alias Caint.Plurals
   alias Caint.Translatables.Translatable
   alias Caint.Translations.Translation
   alias Expo.Message.Plural
   alias Expo.Message.Singular
-  alias Gettext.Interpolation.Default
 
   @doc """
   Builds a list of `Caint.Translatables.Translatable.t()` structs.
@@ -37,10 +37,7 @@ defmodule Caint.Translatables do
 
   defp to_translatables_for_plural(translation, plural_numbers_by_index) do
     Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
-      [msg] = if plural_number == 1, do: translation.message.msgid, else: translation.message.msgid_plural
-      interpolatable = Default.to_interpolatable(msg)
-      good_bindings = %{count: plural_number}
-      {:ok, text} = Default.runtime_interpolate(interpolatable, good_bindings)
+      text = Interpolatables.plural_numbered_string(translation, plural_number)
 
       %Translatable{
         translation: translation,

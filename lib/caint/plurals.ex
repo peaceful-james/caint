@@ -8,8 +8,10 @@ defmodule Caint.Plurals do
 
   @spec build_plural_numbers_by_index_for_locale(Gettext.locale()) :: plural_numbers_by_index()
   def build_plural_numbers_by_index_for_locale(locale) do
-    {:ok, forms_struct} = PluralForms.plural_form(locale)
-    plural_numbers_by_index(forms_struct)
+    case PluralForms.plural_form(locale) do
+      {:ok, forms_struct} -> plural_numbers_by_index(forms_struct)
+      :error -> %{}
+    end
   end
 
   defp plural_numbers_by_index(plural_form) do

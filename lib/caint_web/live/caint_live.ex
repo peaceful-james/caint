@@ -7,7 +7,10 @@ defmodule CaintWeb.CaintLive do
   alias Caint.Deepl
   alias Caint.ExpoLogic
   alias Caint.GettextLocales
+  alias Caint.Interpolatables
+  alias Caint.Plurals
   alias Caint.Translations
+  alias Caint.Translations.Translation
 
   @impl LiveView
   def mount(_params, _session, socket) do
@@ -34,9 +37,10 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def handle_params(unsigned_params, _uri, socket) do
     locale = Map.get(unsigned_params, "locale")
+    plural_numbers_by_index = if locale, do: Plurals.build_plural_numbers_by_index_for_locale(locale), else: %{}
 
     socket
-    |> assign(%{locale: locale})
+    |> assign(%{locale: locale, plural_numbers_by_index: plural_numbers_by_index})
     |> assign_translations()
     |> then(&{:noreply, &1})
   end
@@ -56,10 +60,18 @@ defmodule CaintWeb.CaintLive do
         locales={@locales}
         completion_percentages={@completion_percentages}
       />
-      <.locale_page :if={@live_action == :locale} locale={@locale} translations={@translations} />
+      <.locale_page
+        :if={@live_action == :locale}
+        locale={@locale}
+        translations={@translations}
+        plural_numbers_by_index={@plural_numbers_by_index}
+      />
     </div>
     """
   end
+
+  attr :locales, :list, required: true
+  attr :completion_percentages, :map, required: true
 
   def index_page(assigns) do
     ~H"""
@@ -77,6 +89,10 @@ defmodule CaintWeb.CaintLive do
     </div>
     """
   end
+
+  attr :locale, :string, required: true
+  attr :translations, :list, required: true
+  attr :plural_numbers_by_index, :map, required: true
 
   defp locale_page(assigns) do
     ~H"""
@@ -96,7 +112,17 @@ defmodule CaintWeb.CaintLive do
           <.msgid translation={translation} />
         </:col>
         <:col :let={translation} label="msgstr">
-          <.maybe_msgstr translation={translation} />
+          <div class="space-y-4">
+            <.missing
+              :if={!ExpoLogic.message_translated?(translation.message)}
+              translation={translation}
+            />
+            <.single_translation_form
+              translation={translation}
+              locale={@locale}
+              plural_numbers_by_index={@plural_numbers_by_index}
+            />
+          </div>
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -130,53 +156,99 @@ defmodule CaintWeb.CaintLive do
     """
   end
 
-  attr :translation, :map, required: true
+  attr :translation, Translation, required: true
 
   defp msgid(assigns) do
     %{translation: translation} = assigns
-    [msgid_str] = translation.message.msgid
-    assigns = %{msgid_str: msgid_str}
+    msgid_str = Enum.join(translation.message.msgid, "\n")
+
+    msgid_plural_str =
+      if Map.has_key?(translation.message, :msgid_plural) do
+        Enum.join(translation.message.msgid_plural, "\n")
+      end
+
+    assigns = %{msgid_str: msgid_str, msgid_plural_str: msgid_plural_str}
 
     ~H"""
-    <p>
+    <p class="w-fit p-2 rounded-lg bg-cyan-100 text-balance">
       {@msgid_str}
+    </p>
+    <p :if={@msgid_plural_str} class="w-fit mt-2 p-2 rounded-lg bg-cyan-100 text-balance">
+      {@msgid_plural_str}
     </p>
     """
   end
 
-  attr :translation, :map, required: true
+  defp missing(assigns) do
+    ~H"""
+    <p class="uppercase text-red-500">
+      Missing
+    </p>
+    """
+  end
 
-  defp maybe_msgstr(assigns) do
-    if ExpoLogic.message_translated?(assigns.translation.message) do
-      msgstr(assigns)
-    else
-      ~H"""
-      <p class="uppercase text-red-500">
-        Missing
-      </p>
-      """
+  defp infer_msg_txt_field(plural_number) do
+    if plural_number == 1, do: :msgid, else: :msgid_plural
+  end
+
+  defp build_text_and_placeholder_by_plural_index(translation, plural_numbers_by_index) do
+    case translation.message.msgstr do
+      msgstr_list when is_list(msgstr_list) ->
+        placeholder = Enum.join(translation.message.msgid, "\n")
+        %{nil => %{text: msgstr_list, placeholder: placeholder}}
+
+      msgstr_map when is_map(msgstr_map) ->
+        Enum.reduce(msgstr_map, %{}, fn {plural_index, msgstr_list}, msgstr_map ->
+          plural_number = Map.get(plural_numbers_by_index, plural_index, 0)
+          msg_text_field = infer_msg_txt_field(plural_number)
+          interpolated = translation.message |> Map.get(msg_text_field) |> Enum.join("\n")
+          numbered = Interpolatables.plural_numbered_string(translation, plural_number)
+          placeholder = "\"#{interpolated}\", as in \"#{numbered}\""
+          Map.put(msgstr_map, plural_index, %{text: msgstr_list, placeholder: placeholder})
+        end)
     end
   end
 
-  attr :translation, :map, required: true
+  attr :translation, Translation, required: true
+  attr :locale, :string, required: true
+  attr :plural_numbers_by_index, :map, required: true
 
-  defp msgstr(assigns) do
-    msgstr_strs =
-      case assigns.translation.message.msgstr do
-        msgstr_list when is_list(msgstr_list) -> msgstr_list
-        msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
-      end
+  defp single_translation_form(assigns) do
+    text_and_placeholder_by_plural_index =
+      build_text_and_placeholder_by_plural_index(assigns.translation, assigns.plural_numbers_by_index)
 
-    assigns = %{msgstr_strs: msgstr_strs}
+    assigns = assign(assigns, %{text_and_placeholder_by_plural_index: text_and_placeholder_by_plural_index})
 
     ~H"""
-    <p :for={msgstr_str <- @msgstr_strs}>
-      {msgstr_str}
-    </p>
+    <.form
+      :let={f}
+      :for={
+        {plural_index, %{text: text, placeholder: placeholder}} <-
+          @text_and_placeholder_by_plural_index
+      }
+      class={["flex justify-start gap-x-4 items-center", "border rounded-lg p-2", "bg-gray-300"]}
+      for={to_form(%{"new_text" => text})}
+      phx-submit="translate-single"
+      phx-value-locale={@locale}
+      phx-value-msgid={@translation.message.msgid}
+      phx-value-msgctxt={@translation.message.msgctxt}
+      phx-value-plural_index={plural_index}
+    >
+      <div class="grow">
+        <.input
+          type="textarea"
+          field={f[:new_text]}
+          label={"Translation for " <> placeholder}
+          phx-debounce={100}
+          placeholder={placeholder}
+        />
+      </div>
+      <.button>Save</.button>
+    </.form>
     """
   end
 
-  attr :translation, :map, required: true
+  attr :translation, Translation, required: true
 
   defp msgctxt(assigns) do
     ~H"""
@@ -210,6 +282,13 @@ defmodule CaintWeb.CaintLive do
     |> then(&{:noreply, &1})
   end
 
+  @impl LiveView
+  def handle_event("translate-single", params, socket) do
+    socket
+    |> translate_single(params)
+    |> then(&{:noreply, &1})
+  end
+
   defp calculate_all_completion_percentages(socket) do
     %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
 
@@ -231,7 +310,7 @@ defmodule CaintWeb.CaintLive do
     locales = if gettext_dir, do: GettextLocales.list(gettext_dir), else: []
 
     socket
-    |> assign(:locale, nil)
+    |> assign(%{locale: nil, plural_numbers_by_index: %{}})
     |> assign(:locales, locales)
     |> assign(:completion_percentages, %{})
   end
@@ -268,6 +347,38 @@ defmodule CaintWeb.CaintLive do
         |> assign_gettext_dir(gettext_dir)
         |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
     end
+  end
+
+  defp translate_single(socket, params) do
+    %{"locale" => locale, "new_text" => new_text} = params
+    %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
+    matching_fields = Translations.translation_matching_fields()
+
+    msgid =
+      case Map.get(params, "msgid") do
+        msgid_string when is_binary(msgid_string) -> [msgid_string]
+        nil -> nil
+      end
+
+    msgctxt =
+      case Map.get(params, "msgctxt") do
+        msgctxt_string when is_binary(msgctxt_string) -> [msgctxt_string]
+        nil -> nil
+      end
+
+    search_match = %{msgid: msgid, msgctxt: msgctxt}
+    translation = Enum.find(translations, &(Map.take(&1.message, matching_fields) == search_match))
+
+    plural_index =
+      with plural_index_string when is_binary(plural_index_string) <- Map.get(params, "plural_index"),
+           {plural_index, ""} <- Integer.parse(plural_index_string) do
+        plural_index
+      else
+        _ -> nil
+      end
+
+    :ok = Translations.translate_single(translation, gettext_dir, locale, plural_index, new_text)
+    put_flash(socket, :info, "Saved that translation 👍")
   end
 
   defp translate_all_untranslated(socket, params) do
