@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule CaintWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
@@ -17,6 +18,7 @@ defmodule CaintWeb.CoreComponents do
   use Phoenix.Component
   use Gettext, backend: CaintWeb.Gettext
 
+  alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -301,10 +303,7 @@ defmodule CaintWeb.CoreComponents do
   end
 
   def input(%{type: "checkbox"} = assigns) do
-    assigns =
-      assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-      end)
+    assigns = assign_new(assigns, :checked, fn -> Form.normalize_value("checkbox", assigns[:value]) end)
 
     ~H"""
     <div>

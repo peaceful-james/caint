@@ -1,9 +1,12 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule CaintWeb.CaintLive do
   @moduledoc false
   use CaintWeb, :live_view
 
+  alias Caint.Completion
   alias Caint.Deepl
-  # alias Caint.Plurals
+  alias Caint.ExpoLogic
+  alias Caint.GettextLocales
   alias Caint.Translations
 
   @impl LiveView
@@ -85,12 +88,15 @@ defmodule CaintWeb.CaintLive do
       <.button type="button" phx-click="translate-all-untranslated" phx-value-locale={@locale}>
         Translate all "Missing"
       </.button>
-      <.table id="users" rows={Enum.sort_by(@translations, &Caint.message_translated?(&1.message))}>
+      <.table
+        id="users"
+        rows={Enum.sort_by(@translations, &ExpoLogic.message_translated?(&1.message))}
+      >
         <:col :let={translation} label="msgid">
           <.msgid translation={translation} />
         </:col>
         <:col :let={translation} label="msgstr">
-          <.msgstr translation={translation} />
+          <.maybe_msgstr translation={translation} />
         </:col>
         <:col :let={translation} label="domain">
           {translation.domain}
@@ -140,23 +146,31 @@ defmodule CaintWeb.CaintLive do
 
   attr :translation, :map, required: true
 
-  defp msgstr(assigns) do
-    %{translation: translation} = assigns
+  defp maybe_msgstr(assigns) do
+    if ExpoLogic.message_translated?(assigns.translation.message) do
+      msgstr(assigns)
+    else
+      ~H"""
+      <p class="uppercase text-red-500">
+        Missing
+      </p>
+      """
+    end
+  end
 
+  attr :translation, :map, required: true
+
+  defp msgstr(assigns) do
     msgstr_strs =
-      case translation.message.msgstr do
-        [""] -> [:missing]
-        [msgstr_str] -> [msgstr_str]
+      case assigns.translation.message.msgstr do
+        msgstr_list when is_list(msgstr_list) -> msgstr_list
         msgstr_map when is_map(msgstr_map) -> Enum.map(msgstr_map, fn {k, v} -> "#{k}: #{v}" end)
       end
 
     assigns = %{msgstr_strs: msgstr_strs}
 
     ~H"""
-    <p
-      :for={msgstr_str <- @msgstr_strs}
-      class={[if(msgstr_str == :missing, do: "uppercase text-red-500")]}
-    >
+    <p :for={msgstr_str <- @msgstr_strs}>
       {msgstr_str}
     </p>
     """
@@ -182,7 +196,7 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def handle_event("calc-percent", %{"locale" => locale}, socket) do
     %{gettext_dir: gettext_dir} = socket.assigns
-    percentage = Caint.completion_percentage(gettext_dir, locale)
+    percentage = Completion.percentage(gettext_dir, locale)
 
     socket
     |> update(:completion_percentages, &Map.put(&1, locale, percentage))
@@ -202,7 +216,7 @@ defmodule CaintWeb.CaintLive do
     completion_percentages =
       if gettext_dir do
         Enum.reduce(locales, %{}, fn locale, completion_percentages ->
-          percentage = Caint.completion_percentage(gettext_dir, locale)
+          percentage = Completion.percentage(gettext_dir, locale)
           Map.put(completion_percentages, locale, percentage)
         end)
       else
@@ -214,7 +228,7 @@ defmodule CaintWeb.CaintLive do
 
   defp init_locales(socket) do
     %{gettext_dir: gettext_dir} = socket.assigns
-    locales = if gettext_dir, do: Caint.gettext_locales(gettext_dir), else: []
+    locales = if gettext_dir, do: GettextLocales.list(gettext_dir), else: []
 
     socket
     |> assign(:locale, nil)
@@ -223,6 +237,8 @@ defmodule CaintWeb.CaintLive do
   end
 
   defp assign_gettext_dir(socket, gettext_dir) do
+    Application.put_env(:caint, :gettext_dir, gettext_dir)
+
     socket
     |> assign(:gettext_dir, gettext_dir)
     |> assign(:gettext_dir_form, to_form(%{"gettext_dir" => gettext_dir}))
@@ -232,7 +248,10 @@ defmodule CaintWeb.CaintLive do
 
   defp assign_translations(socket) do
     %{gettext_dir: gettext_dir, locale: locale} = socket.assigns
-    translations = if gettext_dir && locale, do: Translations.translations(gettext_dir, locale), else: []
+
+    translations =
+      if gettext_dir && locale, do: Translations.build_translations_from_po_files(gettext_dir, locale), else: []
+
     assign(socket, :translations, translations)
   end
 
@@ -245,7 +264,9 @@ defmodule CaintWeb.CaintLive do
         put_flash(socket, :error, "#{gettext_dir} is not a directory")
 
       true ->
-        assign_gettext_dir(socket, gettext_dir)
+        socket
+        |> assign_gettext_dir(gettext_dir)
+        |> put_flash(:info, "Gettext directory changed to #{gettext_dir}")
     end
   end
 
@@ -254,10 +275,17 @@ defmodule CaintWeb.CaintLive do
     %{locale: ^locale, translations: translations, gettext_dir: gettext_dir} = socket.assigns
 
     new_translations = Deepl.translate_all_untranslated(translations, locale)
+    write_new_translations(new_translations, gettext_dir, locale)
 
+    socket
+    |> put_flash(:info, "Done translating :)")
+    |> assign(:translations, new_translations)
+  end
+
+  defp write_new_translations(new_translations, gettext_dir, locale) do
     new_translations
     |> Enum.group_by(& &1.domain)
-    |> Enum.map(fn {domain, same_domain_translations} ->
+    |> Enum.each(fn {domain, same_domain_translations} ->
       po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", domain <> ".po"])
 
       unless File.exists?(po_path) do
@@ -267,11 +295,8 @@ defmodule CaintWeb.CaintLive do
       original = Expo.PO.parse_file!(po_path)
       messages = Enum.map(same_domain_translations, & &1.message)
       new = %{original | messages: messages}
-      Caint.write_le_po_file(po_path, new)
+      iodata = Expo.PO.compose(new)
+      File.write!(po_path, iodata)
     end)
-
-    socket
-    |> put_flash(:info, "Done translating :)")
-    |> assign(:translations, new_translations)
   end
 end

@@ -1,0 +1,14 @@
+{
+  "skip_files": [
+    "lib/caint/application.ex",
+    "lib/caint/deepl/real_api_impl.ex",
+    "lib/caint_web/components/core_components.ex",
+    "lib/caint_web/components/layouts.ex",
+    "lib/caint_web/endpoint.ex",
+    "lib/caint_web/gettext.ex",
+    "lib/caint_web/router.ex"
+  ],
+  "coverage_options": {
+    "floor_coverage": true
+  }
+}

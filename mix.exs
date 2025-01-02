@@ -9,7 +9,16 @@ defmodule Caint.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.xml": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
@@ -32,6 +41,10 @@ defmodule Caint.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mox, "~> 1.2"},
+      {:excoveralls, "~> 0.18.3", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
+      {:credo, "~> 1.7", only: [:dev]},
       {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
       {:req, "~> 0.5.8"},
       {:decimal, "~> 2.3"},

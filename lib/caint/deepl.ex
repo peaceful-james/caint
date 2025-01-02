@@ -1,26 +1,19 @@
 defmodule Caint.Deepl do
   @moduledoc """
-  --header 'Authorization: DeepL-Auth-Key [yourAuthKey]' \
-  --header 'Content-Type: application/json' \
+  DeepL integration high-level functions
   """
 
+  alias Caint.Deepl.Api
+  alias Caint.ExpoLogic
   alias Caint.Percentage
   alias Caint.Plurals
+  alias Caint.Translatables
+  alias Caint.Translations
+  alias Caint.Translations.Translation
 
-  @batch_size 50
-
-  defp api_url, do: Application.get_env(:caint, :deepl_api_url)
-  defp api_key, do: Application.get_env(:caint, :deepl_api_key)
-  defp auth_header, do: "DeepL-Auth-Key #{api_key()}"
-
-  def usage do
-    api_url()
-    |> Path.join("usage")
-    |> Req.get(auth: auth_header())
-  end
-
+  @spec usage_percent() :: {:ok, Decimal.t()} | {:error, String.t()}
   def usage_percent do
-    case usage() do
+    case Api.usage() do
       {:ok, %{body: %{"character_count" => character_count, "character_limit" => character_limit}}} ->
         {:ok, Percentage.percentage(character_count, character_limit)}
 
@@ -36,6 +29,7 @@ defmodule Caint.Deepl do
 
   Note that Portuguse in Brazil is simply "pt" in gettext, but DeepL requires "PT-BR".
   """
+  @spec language_code(Gettext.locale()) :: String.t()
   def language_code(gettext_locale) do
     case gettext_locale |> to_string() |> String.replace("_", "-") do
       "pt" -> "PT-BR"
@@ -43,112 +37,43 @@ defmodule Caint.Deepl do
     end
   end
 
-  def translate(data) do
-    api_url()
-    |> Path.join("translate")
-    |> Req.post(auth: auth_header(), json: data)
-  end
-
+  @spec translate_all_untranslated([Translation.t()], Gettext.locale()) :: [Translation.t()]
   def translate_all_untranslated(translations, locale) do
+    plural_numbers_by_index = Plurals.build_plural_numbers_by_index_for_locale(locale)
+    {done, untranslated} = Enum.split_with(translations, &ExpoLogic.message_translated?(&1.message))
+
+    translatables_by_context =
+      untranslated
+      |> Enum.flat_map(&Translatables.to_translatables(&1, plural_numbers_by_index))
+      |> Enum.group_by(& &1.translation.context)
+
     source_lang = language_code(Application.get_env(:caint, :source_locale))
     target_lang = language_code(locale)
-    {:ok, forms_struct} = Expo.PluralForms.plural_form(locale)
-    plural_numbers_by_index = Plurals.plural_numbers_by_index(forms_struct)
-    {done, untranslated} = Enum.split_with(translations, &Caint.message_translated?(&1.message))
 
-    untranslated
-    |> Enum.flat_map(&to_translatables(&1, plural_numbers_by_index))
-    |> Enum.group_by(& &1.translation.context)
+    translatables_by_context
     |> Enum.flat_map(fn {context, same_context_translatables} ->
       same_context_translatables
-      |> Enum.chunk_every(@batch_size)
+      |> Enum.chunk_every(Api.batch_size())
       |> Enum.flat_map(&translate_same_context_translatables_batch(&1, context, source_lang, target_lang))
     end)
     |> Enum.group_by(&{&1.translation.domain, &1.translation.message.msgid, &1.translation.message.msgctxt})
     |> Enum.map(fn {_messages_key, translated} ->
-      case translated do
-        [
-          %{translation: %{message: %Expo.Message.Singular{} = message} = translation, translated_text: translated_text} =
-              _single_translated
-        ] ->
-          msgstr = [translated_text]
-          translated_message = Map.put(message, :msgstr, msgstr)
-          _new_translation = Map.put(translation, :message, translated_message)
-
-        # Map.put(single_translated, :translation, new_translation)     #
-
-        [
-          %{translation: %{message: %Expo.Message.Plural{} = message} = translation} =
-            _first_translated
-          | _
-        ] = plural_translateds ->
-          msgstr =
-            Enum.reduce(plural_translateds, %{}, fn translated, msgstr ->
-              re_interpolated = String.replace(translated.translated_text, "#{translated.plural_number}", "%{count}")
-              Map.put(msgstr, translated.plural_index, [re_interpolated])
-            end)
-
-          translated_message = Map.put(message, :msgstr, msgstr)
-          _new_translation = Map.put(translation, :message, translated_message)
-          # Map.put(first_translated, :translation, new_translation)
-      end
+      Translations.put_translated_message_on_translated(translated)
     end)
     |> Kernel.++(done)
-  end
-
-  @type translatable :: %{
-          translation: Translations.translation(),
-          text: String.t(),
-          plural_index: nil | non_neg_integer(),
-          plural_number: nil | non_neg_integer()
-        }
-  defp to_translatables(translation, plural_numbers_by_index) do
-    case translation.message do
-      %Expo.Message.Singular{} = message ->
-        text = Enum.join(message.msgid, "\n")
-
-        [
-          %{
-            translation: translation,
-            text: text,
-            plural_index: nil,
-            plural_number: nil
-          }
-        ]
-
-      %Expo.Message.Plural{} = message ->
-        Enum.map(plural_numbers_by_index, fn {plural_index, plural_number} ->
-          [msg] =
-            if plural_number == 1 do
-              message.msgid
-            else
-              message.msgid_plural
-            end
-
-          interpolatable = Gettext.Interpolation.Default.to_interpolatable(msg)
-          good_bindings = %{count: plural_number}
-          {:ok, text} = Gettext.Interpolation.Default.runtime_interpolate(interpolatable, good_bindings)
-
-          %{
-            translation: translation,
-            text: text,
-            plural_index: plural_index,
-            plural_number: plural_number
-          }
-        end)
-    end
   end
 
   defp translate_same_context_translatables_batch(same_context_translatables_batch, context, source_lang, target_lang) do
     {:ok, %{body: %{"translations" => deepl_results}}} =
       same_context_translatables_batch
       |> to_translate_data(context, source_lang, target_lang)
-      |> translate()
+      |> Api.translate()
 
     same_context_translatables_batch
     |> Enum.zip(deepl_results)
-    |> Enum.map(fn {translatable, %{"text" => translated_text}} ->
-      Map.put(translatable, :translated_text, replace_xml_tags_with_curly_brackets(translated_text))
+    |> Enum.map(fn {translatable, %{"text" => xml_tagged_translated_text}} ->
+      translated_text = replace_xml_tags_with_curly_brackets(xml_tagged_translated_text)
+      %{translatable | translated_text: translated_text}
     end)
   end
 
