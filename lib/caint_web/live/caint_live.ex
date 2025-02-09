@@ -4,6 +4,7 @@ defmodule CaintWeb.CaintLive do
   use CaintWeb, :live_view
 
   alias Caint.Completion
+  alias Caint.Completion.CompletionBreakdown
   alias Caint.Deepl
   alias Caint.ExpoLogic
   alias Caint.GettextLocales
@@ -58,20 +59,21 @@ defmodule CaintWeb.CaintLive do
       <.index_page
         :if={@live_action == :index}
         locales={@locales}
-        completion_percentages={@completion_percentages}
+        completion_breakdowns={@completion_breakdowns}
       />
       <.locale_page
         :if={@live_action == :locale}
         locale={@locale}
         translations={@translations}
         plural_numbers_by_index={@plural_numbers_by_index}
+        completion_breakdowns={@completion_breakdowns}
       />
     </div>
     """
   end
 
   attr :locales, :list, required: true
-  attr :completion_percentages, :map, required: true
+  attr :completion_breakdowns, :list, required: true
 
   def index_page(assigns) do
     ~H"""
@@ -83,7 +85,7 @@ defmodule CaintWeb.CaintLive do
           </.link>
         </:col>
         <:col :let={locale} label="Completion %">
-          <.completion locale={locale} percentage={@completion_percentages[locale]} />
+          <.completion locale={locale} breakdown={@completion_breakdowns[locale]} />
         </:col>
       </.table>
     </div>
@@ -91,16 +93,28 @@ defmodule CaintWeb.CaintLive do
   end
 
   attr :locale, :string, required: true
+  attr :completion_breakdowns, :list, required: true
   attr :translations, :list, required: true
   attr :plural_numbers_by_index, :map, required: true
 
   defp locale_page(assigns) do
     ~H"""
-    <div id="caint-locale-page">
+    <div id="caint-locale-page" class="space-y-4">
       <.back patch={~p"/"}>
         Back
       </.back>
-      <h1>Locale: {@locale}</h1>
+      <div class="flex items-center justify-start gap-x-6">
+        <p>
+          Locale:
+        </p>
+        <h1 class="p-2 border rounded-full font-bold">{@locale}</h1>
+      </div>
+      <div class="flex items-center justify-start gap-x-6">
+        <p>
+          Completion:
+        </p>
+        <.completion locale={@locale} breakdown={@completion_breakdowns[@locale]} />
+      </div>
       <.button type="button" phx-click="translate-all-untranslated" phx-value-locale={@locale}>
         Translate all "Missing"
       </.button>
@@ -136,21 +150,30 @@ defmodule CaintWeb.CaintLive do
   end
 
   attr :locale, :string, required: true
-  attr :percentage, :any, required: true
+  attr :breakdown, CompletionBreakdown, default: nil
 
   defp completion(assigns) do
+    fully_complete? = !!assigns.breakdown && Decimal.eq?(assigns.breakdown.percentage, 100)
+    assigns = assign(assigns, %{fully_complete?: fully_complete?})
+
     ~H"""
-    <div class="flex justify-between items-center gap-x-2">
-      <p
-        :if={@percentage}
-        class={[
-          if(Decimal.eq?(@percentage, 100), do: "text-green-500", else: "text-red-500")
-        ]}
-      >
-        {@percentage |> to_string() |> Kernel.<>("%")}
-      </p>
+    <div :if={@breakdown} class="flex items-center justify-start gap-x-6 ">
+      <div class="flex items-center justify-center gap-x-2">
+        <div class="divide-y">
+          <p class="tracking-wide">
+            {@breakdown.translated_count || 0}
+          </p>
+          <p class="tracking-wide">
+            {@breakdown.total_count || 0}
+          </p>
+        </div>
+        <p>=</p>
+        <p class={[if(@fully_complete?, do: "text-green-500", else: "text-red-500"), "tracking-wider"]}>
+          {@breakdown.percentage |> to_string() |> Kernel.<>("%")}
+        </p>
+      </div>
       <.button phx-click="calc-percent" phx-value-locale={@locale}>
-        Recalculate
+        Recalculate Completion
       </.button>
     </div>
     """
@@ -268,10 +291,10 @@ defmodule CaintWeb.CaintLive do
   @impl LiveView
   def handle_event("calc-percent", %{"locale" => locale}, socket) do
     %{gettext_dir: gettext_dir} = socket.assigns
-    percentage = Completion.percentage(gettext_dir, locale)
+    breakdown = Completion.breakdown(gettext_dir, locale)
 
     socket
-    |> update(:completion_percentages, &Map.put(&1, locale, percentage))
+    |> update(:completion_breakdowns, &Map.put(&1, locale, breakdown))
     |> then(&{:noreply, &1})
   end
 
@@ -289,20 +312,20 @@ defmodule CaintWeb.CaintLive do
     |> then(&{:noreply, &1})
   end
 
-  defp calculate_all_completion_percentages(socket) do
+  defp calculate_all_completion_breakdowns(socket) do
     %{locales: locales, gettext_dir: gettext_dir} = socket.assigns
 
-    completion_percentages =
+    completion_breakdowns =
       if gettext_dir do
-        Enum.reduce(locales, %{}, fn locale, completion_percentages ->
-          percentage = Completion.percentage(gettext_dir, locale)
-          Map.put(completion_percentages, locale, percentage)
+        Enum.reduce(locales, %{}, fn locale, completion_breakdowns ->
+          breakdown = Completion.breakdown(gettext_dir, locale)
+          Map.put(completion_breakdowns, locale, breakdown)
         end)
       else
         %{}
       end
 
-    assign(socket, :completion_percentages, completion_percentages)
+    assign(socket, :completion_breakdowns, completion_breakdowns)
   end
 
   defp init_locales(socket) do
@@ -312,7 +335,7 @@ defmodule CaintWeb.CaintLive do
     socket
     |> assign(%{locale: nil, plural_numbers_by_index: %{}})
     |> assign(:locales, locales)
-    |> assign(:completion_percentages, %{})
+    |> assign(:completion_breakdowns, %{})
   end
 
   defp assign_gettext_dir(socket, gettext_dir) do
@@ -322,7 +345,7 @@ defmodule CaintWeb.CaintLive do
     |> assign(:gettext_dir, gettext_dir)
     |> assign(:gettext_dir_form, to_form(%{"gettext_dir" => gettext_dir}))
     |> init_locales()
-    |> calculate_all_completion_percentages()
+    |> calculate_all_completion_breakdowns()
   end
 
   defp assign_translations(socket) do
