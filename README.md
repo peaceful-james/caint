@@ -45,3 +45,5 @@ config :caint,
 ```
 iex -S mix phx.server
 ```
+
+The default port is 4032, so visit `http://localhost:4032`.
