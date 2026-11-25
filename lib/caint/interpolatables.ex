@@ -6,7 +6,8 @@ defmodule Caint.Interpolatables do
 
   @spec plural_numbered_string(Translation.t(), non_neg_integer()) :: String.t()
   def plural_numbered_string(translation, plural_number) when is_integer(plural_number) do
-    [msg] = if plural_number == 1, do: translation.message.msgid, else: translation.message.msgid_plural
+    source = if plural_number == 1, do: translation.message.msgid, else: translation.message.msgid_plural
+    msg = IO.iodata_to_binary(source)
     interpolatable = Default.to_interpolatable(msg)
     good_bindings = %{count: plural_number}
 

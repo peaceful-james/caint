@@ -24,6 +24,19 @@ defmodule Caint.InterpolatablesTest do
       assert Interpolatables.plural_numbered_string(translation, 2) == "2 categories"
     end
 
+    test "works for multi-line msgids" do
+      translation =
+        %Translation{
+          message: %Plural{msgid: ["", "%{count} long ", "category"], msgid_plural: ["", "%{count} long ", "categories"]},
+          context: nil,
+          domain: "domain",
+          locale: "en"
+        }
+
+      assert Interpolatables.plural_numbered_string(translation, 1) == "1 long category"
+      assert Interpolatables.plural_numbered_string(translation, 3) == "3 long categories"
+    end
+
     test "returns incomplete string when missing bindings" do
       translation =
         %Translation{

@@ -35,3 +35,8 @@ caint-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+# Local AI tooling config
+/.claude/
+/.impeccable/
+CLAUDE.local.md

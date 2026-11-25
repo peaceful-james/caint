@@ -16,6 +16,25 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+# Caint settings can come from the environment instead of config/dev_secrets.exs.
+# Environment variables win over the secrets file. Not applied in tests.
+if config_env() != :test do
+  deepl_api_key = System.get_env("DEEPL_API_KEY") || Application.get_env(:caint, :deepl_api_key)
+
+  # Free-tier keys end in ":fx" and must use the free API host.
+  default_deepl_api_url =
+    if String.ends_with?(deepl_api_key || "", ":fx"),
+      do: "https://api-free.deepl.com/v2/",
+      else: "https://api.deepl.com/v2/"
+
+  config :caint,
+    deepl_api_key: deepl_api_key,
+    deepl_api_url:
+      System.get_env("DEEPL_API_URL") || Application.get_env(:caint, :deepl_api_url) || default_deepl_api_url,
+    gettext_dir: System.get_env("GETTEXT_DIR") || Application.get_env(:caint, :gettext_dir, ""),
+    source_locale: System.get_env("SOURCE_LOCALE") || Application.get_env(:caint, :source_locale, "en")
+end
+
 if System.get_env("PHX_SERVER") do
   config :caint, CaintWeb.Endpoint, server: true
 end

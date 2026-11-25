@@ -1,5 +1,5 @@
 defmodule Caint.TranslatablesTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Caint.Translatables
   alias Caint.Translatables.Translatable
@@ -16,9 +16,6 @@ defmodule Caint.TranslatablesTest do
         locale: "en"
       }
 
-      plural_numbers_by_index = %{}
-      result = Translatables.to_translatables(translation, plural_numbers_by_index)
-
       assert [
                %Translatable{
                  text: "msgid",
@@ -27,25 +24,22 @@ defmodule Caint.TranslatablesTest do
                  plural_number: nil,
                  translated_text: nil
                }
-             ] = result
+             ] = Translatables.to_translatables(translation)
     end
 
-    test "works for plural translation" do
-      translation =
-        %Translation{
-          message: %Plural{
-            msgid: ["1 category"],
-            msgstr: %{0 => [""], 1 => [""]},
-            msgctxt: ["context"],
-            msgid_plural: ["%{count} categories"]
-          },
-          context: "context",
-          domain: "domain",
-          locale: "en"
-        }
+    test "concatenates multi-line msgids without adding newlines" do
+      translation = %Translation{
+        message: %Singular{msgid: ["", "Hello ", "world"], msgstr: [""]},
+        context: nil,
+        domain: "domain",
+        locale: "en"
+      }
 
-      plural_numbers_by_index = %{0 => 1, 1 => 2}
-      result = Translatables.to_translatables(translation, plural_numbers_by_index)
+      assert [%Translatable{text: "Hello world"}] = Translatables.to_translatables(translation)
+    end
+
+    test "works for plural translation, keeping %{count} in the text" do
+      translation = plural_translation(%{0 => [""], 1 => [""]})
 
       assert [
                %Translatable{
@@ -56,13 +50,35 @@ defmodule Caint.TranslatablesTest do
                  translated_text: nil
                },
                %Translatable{
-                 text: "2 categories",
+                 text: "%{count} categories",
                  translation: ^translation,
                  plural_index: 1,
                  plural_number: 2,
                  translated_text: nil
                }
-             ] = result
+             ] = Translatables.to_translatables(translation)
     end
+
+    test "only_missing skips plural forms that are already translated" do
+      translation = plural_translation(%{0 => ["1 catégorie"], 1 => [""]})
+
+      assert [%Translatable{plural_index: 1}] = Translatables.to_translatables(translation, only_missing: true)
+      assert [_, _] = Translatables.to_translatables(translation)
+    end
+  end
+
+  defp plural_translation(msgstr) do
+    %Translation{
+      message: %Plural{
+        msgid: ["1 category"],
+        msgstr: msgstr,
+        msgctxt: ["context"],
+        msgid_plural: ["%{count} categories"]
+      },
+      context: "context",
+      domain: "domain",
+      locale: "fr",
+      plural_numbers_by_index: %{0 => 1, 1 => 2}
+    }
   end
 end

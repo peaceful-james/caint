@@ -11,7 +11,9 @@ config :caint,
   deepl_api_key: "xxxxxxx",
   deepl_api_url: "https://api-free.deepl.com/v2/",
   gettext_dir: "test/support/priv/gettext",
-  source_locale: "en"
+  source_locale: "en",
+  deepl_retry_base_delay_ms: 0,
+  deepl_req_options: [plug: {Req.Test, Caint.Deepl.RealApiImpl}]
 
 # Print only warnings and errors during test
 config :logger, level: :warning
