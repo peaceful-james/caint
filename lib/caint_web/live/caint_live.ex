@@ -367,11 +367,11 @@ defmodule CaintWeb.CaintLive do
     end
   end
 
-  defp put_translate_result_flash(socket, %{translated_count: count, errors: []}) do
-    put_flash(socket, :info, "Done translating :) #{count} message(s) translated.")
+  defp put_translate_result_flash(socket, %{translated_count: count, errors: [], skipped: skipped}) do
+    put_flash(socket, :info, "Done translating :) #{count} message(s) translated." <> skipped_note(skipped))
   end
 
-  defp put_translate_result_flash(socket, %{translated_count: count, errors: errors}) do
+  defp put_translate_result_flash(socket, %{translated_count: count, errors: errors, skipped: skipped}) do
     failed_count = errors |> Enum.map(& &1.message_count) |> Enum.sum()
 
     reasons =
@@ -384,8 +384,14 @@ defmodule CaintWeb.CaintLive do
       socket,
       :error,
       "Translated #{count} message(s), but #{failed_count} could not be translated (#{reasons}). " <>
-        "Run it again to retry the rest."
+        "Run it again to retry the rest." <> skipped_note(skipped)
     )
+  end
+
+  defp skipped_note([]), do: ""
+
+  defp skipped_note(skipped) do
+    " Skipped " <> Enum.map_join(skipped, ", ", &"#{&1.locale} (#{&1.reason})") <> "."
   end
 
   defp assign_deepl_usage(socket) do

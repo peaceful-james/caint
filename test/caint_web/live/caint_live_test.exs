@@ -25,6 +25,7 @@ defmodule CaintWeb.CaintLiveTest do
 
     stub(MockApiImpl, :usage, &MockDeeplApiImpl.usage/0)
     stub(MockApiImpl, :batch_size, fn -> 50 end)
+    stub(MockApiImpl, :target_languages, &MockDeeplApiImpl.target_languages/0)
     {:ok, gettext_dir: gettext_dir}
   end
 
@@ -89,6 +90,16 @@ defmodule CaintWeb.CaintLiveTest do
 
       render_async(view)
       refute has_element?(view, "#job-progress")
+    end
+
+    test "reports skipped locales", %{conn: conn, gettext_dir: gettext_dir} do
+      File.cp_r!(Path.join(gettext_dir, "ar"), Path.join(gettext_dir, "en_IE"))
+      stub(MockApiImpl, :translate, &Fixtures.echo_translate/1)
+
+      {:ok, view, _html} = live(conn, ~p"/")
+      view |> element("#translate-all-locales") |> render_click()
+
+      assert render_async(view) =~ "10 message(s) translated. Skipped en_IE (same language as the source)."
     end
 
     test "reports partial failures", %{conn: conn} do

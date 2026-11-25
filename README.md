@@ -14,6 +14,10 @@ Auto-translating of PO files for the lazy dev
   quietly with exponential backoff. If something still fails (e.g. quota exceeded), whatever *was*
   translated is saved and you are told what wasn't. Just run it again to pick up the rest.
 
+- Locales that need no translation (`en`, `en_IE`, … when your source is `en`) or that DeepL
+  cannot translate into are skipped, and you are told which ones. Regional variants DeepL lacks
+  fall back to the base language (e.g. `fr_CA` is translated as `FR`).
+
 - Plurals done properly: each plural form is translated with a real example number
   (e.g. `1 file`, `2 files`, `11 files`) so DeepL picks the right grammatical form,
   using the `Plural-Forms` header from your PO files.
@@ -75,6 +79,10 @@ config :caint,
   deepl_max_retries: 8,
   deepl_retry_base_delay_ms: 1_000,
   deepl_retry_max_delay_ms: 30_000
+
+# Optional per-locale overrides (none by default): skip a locale, or force a DeepL target code.
+config :caint,
+  deepl_locale_overrides: %{"en_IE" => :skip, "nb" => "NB"}
 ```
 
 ## Run it locally
