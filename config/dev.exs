@@ -68,4 +68,8 @@ config :phoenix_live_view,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
 
-import_config "dev_secrets.exs"
+# Optional, git-ignored local settings (DeepL API key, gettext dir, ...). See README.
+# Environment variables work too; see config/runtime.exs.
+if File.exists?(Path.join(__DIR__, "dev_secrets.exs")) do
+  import_config "dev_secrets.exs"
+end
