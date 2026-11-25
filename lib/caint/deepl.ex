@@ -47,6 +47,73 @@ defmodule Caint.Deepl do
     end
   end
 
+  @typedoc "What to do with a locale: translate it into a DeepL target code, or skip it (and why)."
+  @type target :: {:translate, String.t()} | {:skip, String.t()}
+
+  @doc """
+  The DeepL codes usable as translation targets (upper-cased, e.g. `"DE"`, `"EN-GB"`, `"PT-BR"`),
+  or `:error` if DeepL could not be asked.
+  """
+  @spec target_languages() :: {:ok, MapSet.t(String.t())} | :error
+  def target_languages do
+    case Api.target_languages() do
+      {:ok, %{status: 200, body: languages}} when is_list(languages) ->
+        {:ok,
+         for(%{"lang" => lang, "usable_as_target" => true} <- languages, into: MapSet.new(), do: String.upcase(lang))}
+
+      other ->
+        Logger.warning("Could not get DeepL target languages, translating every locale: #{describe_error(other)}")
+        :error
+    end
+  end
+
+  @doc """
+  Decide whether, and into which DeepL target language, to translate a gettext locale.
+
+  In order:
+
+    1. An override wins. They default to
+       `config :caint, deepl_locale_overrides: %{"en_IE" => :skip, "nb" => "NB"}`.
+    2. Locales in the same language as the source locale (e.g. `en`, `en_IE` from `en`) are skipped:
+       they need no translation, and Gettext falls back to the msgid anyway.
+    3. If DeepL's target languages are known, use the locale's code if supported, else its base
+       language (`fr_CA` -> `FR`), else the first regional variant of it (`zh` -> `ZH-HANS`),
+       else skip the locale as unsupported.
+    4. If they are not known, translate using `language_code/1` and let DeepL decide.
+  """
+  @spec resolve_target(Gettext.locale(), {:ok, MapSet.t(String.t())} | :error, %{
+          optional(String.t()) => :skip | String.t()
+        }) :: target()
+  def resolve_target(locale, supported_targets, overrides \\ configured_overrides()) do
+    locale = to_string(locale)
+    code = language_code(locale)
+    override = Map.get(overrides, locale)
+
+    cond do
+      override == :skip -> {:skip, "skipped in config"}
+      is_binary(override) -> {:translate, String.upcase(override)}
+      base_language(code) == base_language(language_code(source_locale())) -> {:skip, "same language as the source"}
+      supported_targets == :error -> {:translate, code}
+      true -> resolve_supported_target(code, elem(supported_targets, 1))
+    end
+  end
+
+  defp resolve_supported_target(code, supported) do
+    base = base_language(code)
+    variant = supported |> Enum.sort() |> Enum.find(&String.starts_with?(&1, base <> "-"))
+
+    cond do
+      code in supported -> {:translate, code}
+      base in supported -> {:translate, base}
+      variant -> {:translate, variant}
+      true -> {:skip, "not supported by DeepL"}
+    end
+  end
+
+  defp configured_overrides, do: Application.get_env(:caint, :deepl_locale_overrides, %{})
+  defp source_locale, do: Application.get_env(:caint, :source_locale)
+  defp base_language(code), do: code |> String.split("-") |> hd()
+
   @doc """
   Machine-translate every untranslated message (or untranslated plural form) in `translations`.
 
@@ -62,12 +129,16 @@ defmodule Caint.Deepl do
     * `:max_concurrency` - how many DeepL requests to have in flight at once.
       Defaults to the `:deepl_max_concurrency` app env, or `3`.
     * `:on_progress` - a 1-arity function called with a `t:progress/0` map after each batch.
+    * `:target_langs` - a map of locale to DeepL target code (see `resolve_target/2`).
+      Locales not in it use `language_code/1`.
   """
   @spec translate_all_untranslated([Translation.t()], keyword()) :: {[Translation.t()], [error()]}
   def translate_all_untranslated(translations, opts \\ []) do
     on_progress = Keyword.get(opts, :on_progress, fn _ -> :ok end)
     max_concurrency = Keyword.get(opts, :max_concurrency, Application.get_env(:caint, :deepl_max_concurrency, 3))
-    source_lang = language_code(Application.get_env(:caint, :source_locale))
+    target_langs = Keyword.get(opts, :target_langs, %{})
+    # DeepL source languages have no regional variants (e.g. "EN", not "EN-GB").
+    source_lang = base_language(language_code(source_locale()))
 
     untranslated = Enum.reject(translations, &ExpoLogic.message_translated?(&1.message))
 
@@ -90,7 +161,7 @@ defmodule Caint.Deepl do
 
     {translated, errors} =
       batches
-      |> Task.async_stream(&translate_batch(&1, source_lang),
+      |> Task.async_stream(&translate_batch(&1, source_lang, target_langs),
         max_concurrency: max(max_concurrency, 1),
         ordered: false,
         timeout: :infinity
@@ -129,11 +200,11 @@ defmodule Caint.Deepl do
     end)
   end
 
-  defp translate_batch(%{locale: locale, context: context, translatables: translatables}, source_lang) do
+  defp translate_batch(%{locale: locale, context: context, translatables: translatables}, source_lang, target_langs) do
     data = %{
       text: Enum.map(translatables, &Markup.encode(&1.text, &1.plural_number)),
       source_lang: source_lang,
-      target_lang: language_code(locale),
+      target_lang: Map.get_lazy(target_langs, locale, fn -> language_code(locale) end),
       context: context,
       tag_handling: "xml",
       ignore_tags: Markup.ignore_tags()

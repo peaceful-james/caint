@@ -21,6 +21,18 @@ defmodule Caint.Mocks.MockDeeplApiImpl do
   end
 
   @impl Api
+  def target_languages do
+    # Shape of GET /v3/languages?resource=translate_text
+    targets = ~w(ar de en-GB en-US es fr ja pt-BR pt-PT zh-Hans zh-Hant)
+
+    languages =
+      [%{"lang" => "en", "name" => "English", "usable_as_source" => true, "usable_as_target" => false}] ++
+        Enum.map(targets, &%{"lang" => &1, "name" => &1, "usable_as_source" => false, "usable_as_target" => true})
+
+    {:ok, Response.new(status: 200, body: languages)}
+  end
+
+  @impl Api
   def translate(_data) do
     {:ok,
      %Response{

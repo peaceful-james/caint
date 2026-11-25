@@ -37,6 +37,13 @@ defmodule Caint.Deepl.RealApiImpl do
     Req.post(new_request(), url: "translate", json: data)
   end
 
+  @impl Api
+  def target_languages do
+    # The configured URL ends in /v2/, but the languages endpoint is only current on v3.
+    url = :caint |> Application.get_env(:deepl_api_url) |> URI.merge("/v3/languages") |> URI.to_string()
+    Req.get(new_request(), url: url, params: [resource: "translate_text"])
+  end
+
   defp new_request do
     [
       base_url: Application.get_env(:caint, :deepl_api_url),

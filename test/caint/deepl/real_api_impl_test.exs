@@ -63,6 +63,18 @@ defmodule Caint.Deepl.RealApiImplTest do
     assert_received {:request, "GET", "/v2/usage"}
   end
 
+  test "target_languages asks the v3 languages endpoint" do
+    test_pid = self()
+
+    Req.Test.stub(RealApiImpl, fn conn ->
+      send(test_pid, {:request, conn.method, conn.request_path, conn.query_string})
+      Req.Test.json(conn, [%{"lang" => "de", "usable_as_target" => true}])
+    end)
+
+    assert {:ok, %Req.Response{status: 200, body: [%{"lang" => "de"}]}} = RealApiImpl.target_languages()
+    assert_received {:request, "GET", "/v3/languages", "resource=translate_text"}
+  end
+
   describe "retry/2" do
     test "honours Retry-After with a little jitter, capped at the max delay" do
       request = Req.new()

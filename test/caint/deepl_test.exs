@@ -40,6 +40,67 @@ defmodule Caint.DeeplTest do
     end
   end
 
+  describe "target_languages/0" do
+    test "returns the codes usable as targets, upper-cased" do
+      expect(MockApiImpl, :target_languages, 1, &MockDeeplApiImpl.target_languages/0)
+      assert {:ok, targets} = Deepl.target_languages()
+      assert "EN-GB" in targets
+      assert "ZH-HANT" in targets
+      refute "EN" in targets
+    end
+
+    test "returns :error when DeepL cannot be asked" do
+      expect(MockApiImpl, :target_languages, 1, fn -> {:ok, Req.Response.new(status: 403)} end)
+      assert :error = Deepl.target_languages()
+    end
+  end
+
+  describe "resolve_target/2" do
+    setup do
+      {:ok, supported: {:ok, MapSet.new(~w(AR DE EN-GB EN-US ES FR JA PT-BR PT-PT ZH-HANS ZH-HANT))}}
+    end
+
+    test "translates supported locales", %{supported: supported} do
+      assert Deepl.resolve_target("ar", supported) == {:translate, "AR"}
+      assert Deepl.resolve_target("pt", supported) == {:translate, "PT-BR"}
+      assert Deepl.resolve_target("pt_PT", supported) == {:translate, "PT-PT"}
+      assert Deepl.resolve_target("zh_Hant", supported) == {:translate, "ZH-HANT"}
+    end
+
+    test "falls back to the base language, then its first variant", %{supported: supported} do
+      assert Deepl.resolve_target("fr_CA", supported) == {:translate, "FR"}
+      assert Deepl.resolve_target("de_AT", supported) == {:translate, "DE"}
+      assert Deepl.resolve_target("zh", supported) == {:translate, "ZH-HANS"}
+    end
+
+    test "skips the source language and its variants", %{supported: supported} do
+      assert Deepl.resolve_target("en", supported) == {:skip, "same language as the source"}
+      assert Deepl.resolve_target("en_IE", supported) == {:skip, "same language as the source"}
+      assert Deepl.resolve_target("en_GB", supported) == {:skip, "same language as the source"}
+    end
+
+    test "skips languages DeepL does not support", %{supported: supported} do
+      assert Deepl.resolve_target("ga", supported) == {:skip, "not supported by DeepL"}
+    end
+
+    test "uses the plain language code when the supported languages are unknown" do
+      assert Deepl.resolve_target("ga", :error) == {:translate, "GA"}
+      assert Deepl.resolve_target("fr_CA", :error) == {:translate, "FR-CA"}
+      assert Deepl.resolve_target("en_IE", :error) == {:skip, "same language as the source"}
+    end
+  end
+
+  describe "resolve_target/3" do
+    test "overrides win" do
+      supported = {:ok, MapSet.new(~w(FR EN-GB EN-US))}
+      overrides = %{"ga" => "en-gb", "fr" => :skip, "en_US" => "EN-US"}
+
+      assert Deepl.resolve_target("ga", supported, overrides) == {:translate, "EN-GB"}
+      assert Deepl.resolve_target("fr", supported, overrides) == {:skip, "skipped in config"}
+      assert Deepl.resolve_target("en_US", supported, overrides) == {:translate, "EN-US"}
+    end
+  end
+
   describe "translate_all_untranslated/2" do
     setup do
       stub(MockApiImpl, :batch_size, &MockDeeplApiImpl.batch_size/0)
@@ -130,6 +191,16 @@ defmodule Caint.DeeplTest do
     test "skips already-translated messages without calling DeepL" do
       translation = %{singular("Hi", "fr") | message: %Singular{msgid: ["Hi"], msgstr: ["Salut"]}}
       assert {[], []} = Deepl.translate_all_untranslated([translation])
+    end
+
+    test "uses the given target codes and a base source language" do
+      expect(MockApiImpl, :translate, 1, fn data ->
+        assert data.target_lang == "FR"
+        assert data.source_lang == "EN"
+        Fixtures.echo_translate(data)
+      end)
+
+      assert {[_], []} = Deepl.translate_all_untranslated([singular("a", "fr_CA")], target_langs: %{"fr_CA" => "FR"})
     end
 
     test "batches by locale and context, across locales" do
