@@ -20,7 +20,11 @@ config :caint, CaintWeb.Endpoint,
 
 config :caint,
   env: config_env(),
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  source_locale: "en",
+  # How many DeepL requests may be in flight at once. Throttled requests are retried.
+  deepl_max_concurrency: 3,
+  deepl_max_retries: 8
 
 # Configure esbuild (the version is required)
 config :esbuild,

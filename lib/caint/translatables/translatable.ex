@@ -3,7 +3,7 @@ defmodule Caint.Translatables.Translatable do
   "Translatables" are maps containing translations and inferred info.
 
   The extra info includes:
-  - The text of the translation, with interpolation still present.
+  - The source text of the translation, with interpolation still present (e.g. `%{count}`).
   - The index of the plural form (if any)
   - An example number of the plural form (if any)
 
@@ -19,9 +19,8 @@ defmodule Caint.Translatables.Translatable do
 
   The role of the `plural_number` field is to give an example number to the API.
   That way, the API can infer the correct plural form to use.
-
-  We must take care to convert the plural number back to `%{count}` in the string
-  after translating!
+  `Caint.Deepl.Markup` substitutes it for `%{count}` in a marked-up way, so that exactly
+  that number (and no other) is turned back into `%{count}` after translating.
   """
 
   alias Caint.Translations.Translation

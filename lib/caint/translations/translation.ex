@@ -27,16 +27,28 @@ defmodule Caint.Translations.Translation do
   """
   @type domain :: String.t()
 
+  @typedoc """
+  A stable identifier for a message within a locale.
+
+  Derived from the domain, `msgctxt` and `msgid`, so it survives re-reading the PO file
+  and is safe to use as a DOM id and as a form value.
+  """
+  @type id :: String.t()
+
   @type t :: %__MODULE__{
+          id: id() | nil,
           message: Singular.t() | Plural.t(),
-          context: context(),
+          context: context() | nil,
           domain: domain(),
-          locale: Gettext.locale()
+          locale: Gettext.locale(),
+          plural_numbers_by_index: Caint.Plurals.plural_numbers_by_index()
         }
 
   @enforce_keys [:message, :context, :domain, :locale]
-  defstruct message: nil,
+  defstruct id: nil,
+            message: nil,
             context: "",
             domain: "",
-            locale: ""
+            locale: "",
+            plural_numbers_by_index: %{}
 end
