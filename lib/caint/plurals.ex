@@ -23,7 +23,7 @@ defmodule Caint.Plurals do
   end
 
   defp build_plural_numbers_by_index_recursive(plural_form, number_to_try, required_index, acc, required_length) do
-    index = Expo.PluralForms.index(plural_form, number_to_try)
+    index = PluralForms.index(plural_form, number_to_try)
 
     if index == required_index do
       new_acc = Map.put(acc, index, number_to_try)

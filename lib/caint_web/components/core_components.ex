@@ -19,6 +19,7 @@ defmodule CaintWeb.CoreComponents do
   use Gettext, backend: CaintWeb.Gettext
 
   alias Phoenix.HTML.Form
+  alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -280,7 +281,7 @@ defmodule CaintWeb.CoreComponents do
     values: ~w(checkbox color date datetime-local email file month number password
                range search select tel text textarea time url week)
 
-  attr :field, Phoenix.HTML.FormField, doc: "a form field struct retrieved from the form, for example: @form[:email]"
+  attr :field, FormField, doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
@@ -291,7 +292,7 @@ defmodule CaintWeb.CoreComponents do
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+  def input(%{field: %FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
     assigns
@@ -526,6 +527,9 @@ defmodule CaintWeb.CoreComponents do
         <:item title="Views">{@post.views}</:item>
       </.list>
   """
+
+  ## JS Commands
+
   slot :item, required: true do
     attr :title, :string, required: true
   end
@@ -595,8 +599,6 @@ defmodule CaintWeb.CoreComponents do
     <span class={[@name, @class]} />
     """
   end
-
-  ## JS Commands
 
   def show(js \\ %JS{}, selector) do
     JS.show(js,

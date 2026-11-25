@@ -422,7 +422,7 @@ defmodule CaintWeb.CaintLive do
     |> Enum.each(fn {domain, same_domain_translations} ->
       po_path = Path.join([gettext_dir, locale, "LC_MESSAGES", domain <> ".po"])
 
-      unless File.exists?(po_path) do
+      if !File.exists?(po_path) do
         raise "NO SUCH PATH #{po_path}"
       end
 

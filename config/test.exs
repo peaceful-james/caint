@@ -7,6 +7,12 @@ config :caint, CaintWeb.Endpoint,
   secret_key_base: "LixyjLbFax9qkA3t37RV9MUWZHSZzYwVvcOaKpwvv/t97szo0Dm9gclzyit+sglk",
   server: false
 
+config :caint,
+  deepl_api_key: "xxxxxxx",
+  deepl_api_url: "https://api-free.deepl.com/v2/",
+  gettext_dir: "test/support/priv/gettext",
+  source_locale: "en"
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 
@@ -16,9 +22,3 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
-
-config :caint,
-  deepl_api_key: "xxxxxxx",
-  deepl_api_url: "https://api-free.deepl.com/v2/",
-  gettext_dir: "test/support/priv/gettext",
-  source_locale: "en"
